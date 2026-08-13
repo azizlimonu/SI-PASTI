@@ -52,14 +52,40 @@ const getSptByPenugasan = async (req, res) => {
 // ═══════════════════════════════════════════
 const createSpt = async (req, res) => {
   try {
-    const { penugasan_id, nomor_spt, tanggal_spt, tim } = req.body;
     const user = req.user;
-    const { link_spt } = req.body;
+    const {
+      penugasan_id, nomor_spt,
+      jenis_kegiatan, jenis_kegiatan_lainnya,
+      uraian_kegiatan, tanggal_mulai,
+      tanggal_selesai, tim
+    } = req.body;
 
-    if (!penugasan_id || !nomor_spt || !tanggal_spt) {
+    if (!penugasan_id || !nomor_spt || !jenis_kegiatan ||
+      !uraian_kegiatan || !tanggal_mulai || !tanggal_selesai) {
       return res.status(400).json({
         success: false,
-        message: 'Penugasan, nomor SPT, dan tanggal SPT wajib diisi.'
+        message: 'Semua field wajib diisi.'
+      });
+    }
+
+    if (jenis_kegiatan === 'Lainnya' && !jenis_kegiatan_lainnya) {
+      return res.status(400).json({
+        success: false,
+        message: 'Keterangan jenis kegiatan lainnya wajib diisi.'
+      });
+    }
+
+    // Hitung jumlah hari otomatis
+    const mulai = new Date(tanggal_mulai);
+    const selesai = new Date(tanggal_selesai);
+    const jumlah_hari = Math.floor(
+      (selesai - mulai) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+    if (jumlah_hari <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tanggal selesai harus setelah tanggal mulai.'
       });
     }
 
@@ -94,6 +120,7 @@ const createSpt = async (req, res) => {
 
     // Buat SPT
     const { link_spt } = req.body;
+
     if (!req.file && !link_spt) {
       return res.status(400).json({
         success: false,
@@ -104,7 +131,14 @@ const createSpt = async (req, res) => {
     const spt = await Spt.create({
       penugasan_id,
       nomor_spt,
-      tanggal_spt,
+      jenis_kegiatan,
+      jenis_kegiatan_lainnya: jenis_kegiatan === 'Lainnya'
+        ? jenis_kegiatan_lainnya
+        : null,
+      uraian_kegiatan,
+      tanggal_mulai,
+      tanggal_selesai,
+      jumlah_hari,
       file_spt: req.file ? req.file.path : null,
       link_spt: link_spt || null,
       created_by: user.id
@@ -129,7 +163,7 @@ const createSpt = async (req, res) => {
       user.nama,
       'Tambah SPT',
       'SPT',
-      `${nomor_spt} — ${penugasan.nama_penugasan} Keirbanan ${penugasan.pkpt.keirbanan}`,
+      `${nomor_spt} — ${jenis_kegiatan} ${uraian_kegiatan} — ${penugasan.nama_penugasan} Keirbanan ${penugasan.pkpt.keirbanan}`,
       penugasan.pkpt.keirbanan
     );
 
@@ -155,7 +189,23 @@ const createSpt = async (req, res) => {
 // ═══════════════════════════════════════════
 const updateSpt = async (req, res) => {
   try {
-    const { nomor_spt, tanggal_spt, tim } = req.body;
+    const {
+      nomor_spt, jenis_kegiatan, jenis_kegiatan_lainnya,
+      uraian_kegiatan, tanggal_mulai, tanggal_selesai,
+      link_spt, tim
+    } = req.body;
+
+    // Hitung ulang jumlah hari jika tanggal berubah
+    let jumlah_hari = spt.jumlah_hari;
+    if (tanggal_mulai || tanggal_selesai) {
+      const mulai = new Date(tanggal_mulai || spt.tanggal_mulai);
+      const selesai = new Date(tanggal_selesai || spt.tanggal_selesai);
+      jumlah_hari = Math.floor(
+        (selesai - mulai) / (1000 * 60 * 60 * 24)
+      ) + 1;
+    }
+
+
     const user = req.user;
     const { link_spt } = req.body;
 
@@ -189,7 +239,16 @@ const updateSpt = async (req, res) => {
 
     await spt.update({
       nomor_spt: nomor_spt || spt.nomor_spt,
-      tanggal_spt: tanggal_spt || spt.tanggal_spt,
+      jenis_kegiatan: jenis_kegiatan || spt.jenis_kegiatan,
+      jenis_kegiatan_lainnya: jenis_kegiatan === 'Lainnya'
+        ? jenis_kegiatan_lainnya
+        : jenis_kegiatan
+          ? null
+          : spt.jenis_kegiatan_lainnya,
+      uraian_kegiatan: uraian_kegiatan || spt.uraian_kegiatan,
+      tanggal_mulai: tanggal_mulai || spt.tanggal_mulai,
+      tanggal_selesai: tanggal_selesai || spt.tanggal_selesai,
+      jumlah_hari,
       file_spt: req.file ? req.file.path : spt.file_spt,
       link_spt: link_spt !== undefined ? link_spt : spt.link_spt
     });
