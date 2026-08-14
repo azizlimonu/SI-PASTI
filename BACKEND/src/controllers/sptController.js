@@ -194,6 +194,7 @@ const updateSpt = async (req, res) => {
       uraian_kegiatan, tanggal_mulai, tanggal_selesai,
       link_spt, tim
     } = req.body;
+    const user = req.user;
 
     // Hitung ulang jumlah hari jika tanggal berubah
     let jumlah_hari = spt.jumlah_hari;
@@ -204,10 +205,6 @@ const updateSpt = async (req, res) => {
         (selesai - mulai) / (1000 * 60 * 60 * 24)
       ) + 1;
     }
-
-
-    const user = req.user;
-    const { link_spt } = req.body;
 
     const spt = await Spt.findByPk(req.params.id, {
       include: [
@@ -234,8 +231,6 @@ const updateSpt = async (req, res) => {
         message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
       });
     }
-
-    const { link_spt } = req.body;
 
     await spt.update({
       nomor_spt: nomor_spt || spt.nomor_spt,
