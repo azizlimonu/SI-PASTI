@@ -1,10 +1,10 @@
-POST /api/auth/login
-POST /api/auth/change-password
-GET /api/auth/profile
+POST /api/auth/login                    ok
+POST /api/auth/change-password          ok
+GET /api/auth/profile                   ok
 POST /api/auth/create-user
 
-GET /api/users
-GET /api/users/:id
+GET /api/users                          ok
+GET /api/users/:id                      ok
 PUT /api/users/:id
 PATCH /api/users/:id/nonaktifkan
 PATCH /api/users/:id/aktifkan
