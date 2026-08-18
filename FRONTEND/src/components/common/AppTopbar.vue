@@ -43,6 +43,40 @@
       </span>
       <span v-else class="badge badge-purple"> Semua Keirbanan </span>
 
+      <!-- Toggle Darkmode light mode -->
+      <button
+        class="theme-toggle"
+        @click="ui.toggleTheme"
+        :title="ui.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+      >
+        <!-- Sun icon (light mode) -->
+        <svg
+          v-if="!ui.isDark"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style="width:18px;height:18px;"
+        >
+          <path
+            d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM6.464 14.596a.75.75 0 1 0-1.06-1.06l-1.06 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 5 10ZM14.596 15.657a.75.75 0 0 0 1.06-1.06l-1.06-1.061a.75.75 0 1 0-1.06 1.06l1.06 1.06ZM5.404 6.464a.75.75 0 0 0 1.06-1.06l-1.06-1.06a.75.75 0 1 0-1.061 1.06l1.06 1.06Z"
+          />
+        </svg>
+        <!-- Moon icon (dark mode) -->
+        <svg
+          v-else
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style="width:18px;height:18px;"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+
       <!-- User Dropdown -->
       <div class="user-dropdown" ref="dropdownRef">
         <button class="user-btn" @click="dropdownOpen = !dropdownOpen">
@@ -139,12 +173,14 @@ import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 dayjs.locale('id')
+import { useUIStore } from '@/stores/ui'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+const ui = useUIStore()
 
 const currentDate = computed(() =>
   dayjs().format('dddd, D MMMM YYYY')
@@ -389,5 +425,26 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 0.625rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background-color: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 </style>

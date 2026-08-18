@@ -367,17 +367,9 @@ const roleLabel = computed(() => {
 
 <style scoped>
 .sidebar {
-  width: 260px;
-  min-width: 260px;
-  height: 100vh;
-  background-color: var(--color-navy-800);
-  border-right: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease, min-width 0.3s ease;
-  overflow: hidden;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
 }
-
 .sidebar-collapsed {
   width: 68px;
   min-width: 68px;
@@ -385,19 +377,16 @@ const roleLabel = computed(() => {
 
 /* HEADER */
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
-  min-height: 64px;
+  border-bottom: 1px solid var(--border-color);
 }
+
 
 .sidebar-logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   overflow: hidden;
+  padding: 10px;
 }
 
 .sidebar-logo-img {
@@ -418,12 +407,14 @@ const roleLabel = computed(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  padding : 10px;
 }
 
 .sidebar-logo-text {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding:10px;
 }
 
 .logo-app-name {
@@ -452,8 +443,8 @@ const roleLabel = computed(() => {
 }
 
 .sidebar-toggle:hover {
-  background-color: var(--color-navy-700);
-  color: white;
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* NAV */
@@ -489,18 +480,11 @@ const roleLabel = computed(() => {
 
 /* FOOTER */
 .sidebar-footer {
-  padding: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
+  border-top: 1px solid var(--border-color);
 }
 
 .sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--color-navy-700) 50%, transparent);
-  overflow: hidden;
+  background: var(--bg-hover);
 }
 
 .user-avatar {

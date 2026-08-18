@@ -8,8 +8,9 @@ import router from './router'
 import './assets/css/main.css'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(Toast, {
   position: 'top-right',
@@ -19,5 +20,9 @@ app.use(Toast, {
   draggable: true,
   hideProgressBar: false
 })
+
+// Init theme sebelum mount
+import { useUIStore } from '@/stores/ui'
+const ui = useUIStore()
 
 app.mount('#app')
