@@ -5,25 +5,25 @@
 
     <!-- Content -->
     <div class="login-content">
-      <!-- LEFT — Branding -->
+      <!-- LEFT — Branding (polos, tanpa card, mengikuti proporsi referensi) -->
       <div class="login-left">
-        <div class="login-brand-card">
-          <!-- Logo Space -->
-          <div class="logo-wrapper">
+        <!-- Top: mark + nama instansi -->
+        <div class="brand-top">
+          <div class="brand-mark">
             <img
               v-if="logoUrl"
               :src="logoUrl"
               alt="Logo Instansi"
-              class="logo-img"
+              class="brand-mark-img"
             />
-            <div v-else class="logo-placeholder">
+            <div v-else class="brand-mark-placeholder">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke-width="1.5"
                 stroke="currentColor"
-                style="width:40px;height:40px;color:var(--color-primary-400);"
+                style="width:22px;height:22px;color:var(--color-primary-400);"
               >
                 <path
                   stroke-linecap="round"
@@ -33,53 +33,82 @@
               </svg>
             </div>
           </div>
-
-          <!-- App Name -->
-          <div class="brand-text">
-            <h1 class="brand-title">SI PASTI</h1>
-            <p class="brand-subtitle">
-              Sistem Informasi Pengelolaan Arsip<br />Secara Terpusat dan
-              Integratif
-            </p>
-            <div class="brand-divider"></div>
-            <p class="brand-instansi">Inspektorat Kabupaten Gorontalo</p>
+          <div>
+            <p class="brand-mark-name">SI PASTI</p>
+            <p class="brand-mark-sub">Inspektorat Kab. Gorontalo</p>
           </div>
+        </div>
 
-          <!-- Decorative dots -->
-          <div class="brand-dots">
-            <span
-              v-for="i in 3"
-              :key="i"
-              class="dot"
-              :style="{ animationDelay: `${i * 0.3}s` }"
-            ></span>
-          </div>
+        <!-- Middle: headline -->
+        <div class="brand-middle">
+          <p class="brand-eyebrow">Selamat Datang di SI PASTI</p>
+          <h1 class="brand-title">
+            Sistem Informasi<br />Pengelolaan Arsip Terpusat
+          </h1>
+          <p class="brand-subtitle">
+            Pengelolaan pengawasan internal secara terintegrasi — mulai dari
+            PKPT, penugasan, dokumen hasil pemeriksaan, hingga tindak lanjut
+            rekomendasi.
+          </p>
+        </div>
+
+        <!-- Bottom: footer note -->
+        <div class="brand-bottom">
+          <p>Inspektorat Daerah Kabupaten Gorontalo</p>
         </div>
       </div>
 
-      <!-- RIGHT — Form Login -->
+      <!-- RIGHT — Form Login (card tunggal, lebar tetap) -->
       <div class="login-right">
         <div class="login-form-card">
-          <div style="margin-bottom:2rem;">
-            <h2 class="form-title">Masuk ke Sistem</h2>
+          <div class="form-header">
+            <div class="form-logo">
+              <img
+                v-if="logoUrl"
+                :src="logoUrl"
+                alt="Logo Instansi"
+                class="form-logo-img"
+              />
+              <div v-else class="form-logo-placeholder">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  style="width:28px;height:28px;color:var(--color-primary-400);"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h2 class="form-title">Masuk ke Akun Anda</h2>
             <p class="form-subtitle">Masukkan NIP dan password Anda</p>
           </div>
 
-          <!-- Error Alert -->
-          <div v-if="errorMsg" class="alert-danger" style="margin-bottom:1rem;">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              style="width:18px;height:18px;flex-shrink:0;"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <span style="font-size:0.875rem;">{{ errorMsg }}</span>
+          <!-- Error Alert — slot tinggi reserved, card tidak ikut berubah ukuran -->
+          <div class="alert-slot">
+            <Transition name="alert-fade">
+              <div v-if="errorMsg" class="alert-danger">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  style="width:18px;height:18px;flex-shrink:0;"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span style="font-size:0.875rem;">{{ errorMsg }}</span>
+              </div>
+            </Transition>
           </div>
 
           <!-- Form -->
@@ -205,9 +234,7 @@
             </button>
           </div>
 
-          <p
-            style="text-align:center; font-size:0.75rem; color:#475569; margin-top:1.5rem;"
-          >
+          <p class="form-footer-note">
             Hubungi administrator untuk mendapatkan akses
           </p>
         </div>
@@ -290,8 +317,6 @@ onMounted(() => {
   background: linear-gradient(135deg, #050d1a 0%, #0a0f1e 50%, #0f1629 100%);
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
@@ -305,115 +330,190 @@ onMounted(() => {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
-  gap: 2rem;
+  align-items: stretch;
   width: 100%;
-  max-width: 900px;
-  padding: 2rem;
+  min-height: 100vh;
 }
 
-/* LEFT CARD */
-.login-brand-card {
+/* ═══════════════════════════════════════════
+   LEFT — polos, tersebar top/middle/bottom
+═══════════════════════════════════════════ */
+.login-left {
   flex: 1;
-  background: rgba(15, 22, 41, 0.6);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(30, 58, 95, 0.5);
-  border-radius: 1.5rem;
-  padding: 2.5rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  text-align: center;
+  justify-content: space-between;
+  padding: 3rem clamp(2rem, 6vw, 5rem);
 }
 
-.logo-wrapper {
+.brand-top {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.75rem;
 }
 
-.logo-img {
-  width: 100px;
-  height: 100px;
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.brand-mark-img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));
 }
 
-.logo-placeholder {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: rgba(59, 130, 246, 0.1);
-  border: 2px solid rgba(59, 130, 246, 0.3);
+.brand-mark-placeholder {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
-  animation: pulseGlow 2s infinite;
+}
+
+.brand-mark-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.02em;
+}
+
+.brand-mark-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.brand-middle {
+  max-width: 480px;
+}
+
+.brand-eyebrow {
+  font-size: 0.85rem;
+  color: #60a5fa;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
 }
 
 .brand-title {
-  font-size: 2.25rem;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
   font-weight: 700;
   color: white;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.35);
+  margin-bottom: 1rem;
 }
 
 .brand-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: #94a3b8;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
-.brand-divider {
-  width: 40px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-primary-500), transparent);
-  margin: 0.25rem auto;
+.brand-bottom {
+  font-size: 0.75rem;
+  color: #475569;
 }
 
-.brand-instansi {
-  font-size: 0.8rem;
-  color: #60a5fa;
-  font-weight: 500;
-}
-
-.brand-dots {
+/* ═══════════════════════════════════════════
+   RIGHT — card tunggal, lebar tetap
+═══════════════════════════════════════════ */
+.login-right {
+  flex-shrink: 0;
+  width: min(460px, 100%);
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem clamp(1rem, 4vw, 3rem);
 }
 
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--color-primary-500);
-  animation: pulseGlow 1.5s infinite;
-  opacity: 0.7;
-}
-
-/* RIGHT CARD */
 .login-form-card {
-  flex: 1;
+  width: 100%;
   background: rgba(15, 22, 41, 0.7);
   backdrop-filter: blur(24px);
   border: 1px solid rgba(30, 58, 95, 0.5);
   border-radius: 1.5rem;
   padding: 2.5rem;
+  box-sizing: border-box;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-logo {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+}
+
+.form-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.form-logo-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
 }
 
 .form-title {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: white;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
 .form-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #94a3b8;
+}
+
+.form-footer-note {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #475569;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
+}
+
+/* ALERT SLOT — ruang reserved supaya card tidak berubah ukuran
+   saat pesan error muncul/hilang */
+.alert-slot {
+  min-height: 3.25rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: flex-start;
+}
+
+.alert-slot .alert-danger {
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.alert-fade-enter-active,
+.alert-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.alert-fade-enter-from,
+.alert-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 @keyframes pulseGlow {
@@ -421,10 +521,19 @@ onMounted(() => {
   50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.6); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .login-content {
     flex-direction: column;
-    padding: 1rem;
+  }
+
+  .login-left {
+    display: none;
+  }
+
+  .login-right {
+    width: 100%;
+    min-height: 100vh;
+    padding: 1.5rem;
   }
 }
 </style>

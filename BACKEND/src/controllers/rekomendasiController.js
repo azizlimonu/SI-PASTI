@@ -11,7 +11,10 @@ const getRekomendasiByTemuan = async (req, res) => {
   try {
     const { temuan_id } = req.params;
 
-    const rekomendasi = await Rekomendasi.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await Rekomendasi.findAndCountAll({
       where: { temuan_id },
       include: [
         { model: Pihak, as: 'pihak' },
@@ -22,10 +25,22 @@ const getRekomendasiByTemuan = async (req, res) => {
           include: ['buktis']
         }
       ],
-      order: [['created_at', 'ASC']]
+      order: [['created_at', 'ASC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: rekomendasi });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

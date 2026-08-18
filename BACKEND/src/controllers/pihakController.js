@@ -24,15 +24,30 @@ const getAllPihak = async (req, res) => {
       ];
     }
 
-    const pihak = await Pihak.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await Pihak.findAndCountAll({
       where,
       include: [
         { model: User, as: 'creator', attributes: ['id', 'nama'] }
       ],
-      order: [['nama', 'ASC']]
+      order: [['nama', 'ASC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: pihak });
+    return res.json({ success: true, data: pihak }); return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

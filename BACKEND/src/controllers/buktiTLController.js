@@ -33,13 +33,28 @@ const getAllBukti = async (req, res) => {
       return res.json({ success: true, data: tl.buktis });
     }
 
-    const bukti = await BuktiTL.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await BuktiTL.findAndCountAll({
       where,
       include,
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: bukti });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

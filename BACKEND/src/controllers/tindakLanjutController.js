@@ -13,7 +13,10 @@ const getTLByRekomendasi = async (req, res) => {
   try {
     const { rekomendasi_id } = req.params;
 
-    const tl = await TindakLanjut.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await TindakLanjut.findAndCountAll({
       where: { rekomendasi_id },
       include: [
         { model: User, as: 'creator', attributes: ['id', 'nama'] },
@@ -23,10 +26,22 @@ const getTLByRekomendasi = async (req, res) => {
           through: { attributes: [] }
         }
       ],
-      order: [['tanggal_tl', 'ASC']]
+      order: [['tanggal_tl', 'DESC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: tl });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

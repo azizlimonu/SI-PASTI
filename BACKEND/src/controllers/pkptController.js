@@ -16,7 +16,10 @@ const getPkpt = async (req, res) => {
     if (tahun) where.tahun = tahun;
     if (status) where.status = status;
 
-    const pkpt = await Pkpt.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await Pkpt.findAndCountAll({
       where,
       include: [
         {
@@ -37,10 +40,21 @@ const getPkpt = async (req, res) => {
           attributes: ['id', 'nama', 'nip']
         }
       ],
-      order: [['tahun', 'DESC'], ['created_at', 'DESC']]
+      order: [['tahun', 'DESC'], ['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset
     });
 
-    return res.json({ success: true, data: pkpt });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

@@ -27,7 +27,10 @@ const getPenugasan = async (req, res) => {
       ];
     }
 
-    const penugasan = await Penugasan.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await Penugasan.findAndCountAll({
       where,
       include: [
         {
@@ -54,10 +57,22 @@ const getPenugasan = async (req, res) => {
           attributes: ['id', 'nama', 'nip']
         }
       ],
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: penugasan });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,

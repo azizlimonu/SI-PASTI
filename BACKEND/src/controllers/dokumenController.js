@@ -33,7 +33,10 @@ const getDokumenByPenugasan = async (req, res) => {
       });
     }
 
-    const dokumen = await DokumenPenugasan.findAll({
+    const { page = 1, limit = 25 } = req.query
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
+    const { count, rows } = await DokumenPenugasan.findAndCountAll({
       where: { penugasan_id },
       include: [
         { model: User, as: 'creator', attributes: ['id', 'nama'] },
@@ -51,10 +54,22 @@ const getDokumenByPenugasan = async (req, res) => {
           ]
         }
       ],
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset,
+      distinct: true
     });
 
-    return res.json({ success: true, data: dokumen });
+    return res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total_pages: Math.ceil(count / parseInt(limit))
+      }
+    })
   } catch (e) {
     return res.status(500).json({
       success: false,
