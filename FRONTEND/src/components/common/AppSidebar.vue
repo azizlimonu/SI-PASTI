@@ -1,45 +1,23 @@
 <template>
-  <aside :class="['sidebar', { 'sidebar-collapsed': isCollapsed }]">
-    <!-- Header Sidebar -->
+  <aside :class="['sidebar', { collapsed: isCollapsed }]">
+    <!-- ═══ HEADER ═══ -->
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <img
-          v-if="logoUrl"
-          :src="logoUrl"
-          alt="Logo"
-          class="sidebar-logo-img"
-        />
-        <div v-else class="sidebar-logo-placeholder">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            style="width:20px;height:20px;color:var(--color-primary-400);"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"
-            />
-          </svg>
-        </div>
-        <Transition name="fade">
-          <div v-if="!isCollapsed" class="sidebar-logo-text">
-            <span class="logo-app-name">SI PASTI</span>
-            <span class="logo-instansi">Inspektorat Kab. Gorontalo</span>
-          </div>
+        <img :src="logoSrc" alt="Logo SI PASTI" class="sidebar-logo-img" />
+        <Transition name="fade-text">
+          <span v-if="!isCollapsed" class="sidebar-app-name">SI PASTI</span>
         </Transition>
       </div>
-
-      <!-- Toggle Button -->
-      <button class="sidebar-toggle" @click="isCollapsed = !isCollapsed">
+      <button
+        class="sidebar-toggle"
+        @click="isCollapsed = !isCollapsed"
+        :title="isCollapsed ? 'Perluas' : 'Perkecil'"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          style="width:16px;height:16px;"
+          style="width:14px;height:14px;"
         >
           <path
             v-if="!isCollapsed"
@@ -57,11 +35,27 @@
       </button>
     </div>
 
-    <!-- Navigation -->
+    <!-- ═══ TAHUN AKTIF (hanya tampil kalau tidak collapsed) ═══ -->
+    <Transition name="fade-text">
+      <div v-if="!isCollapsed" class="tahun-selector">
+        <span class="tahun-label">Tahun PKPT</span>
+        <div class="tahun-tabs">
+          <button
+            v-for="tahun in ui.daftarTahun"
+            :key="tahun"
+            :class="['tahun-btn', { active: ui.tahunAktif === tahun }]"
+            @click="ui.setTahunAktif(tahun)"
+          >
+            {{ tahun }}
+          </button>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- ═══ NAVIGATION ═══ -->
     <nav class="sidebar-nav">
-      <!-- Dashboard -->
+      <!-- Dashboard — semua role -->
       <div class="nav-section">
-        <span v-if="!isCollapsed" class="nav-section-label">Menu Utama</span>
         <RouterLink
           to="/"
           class="sidebar-link"
@@ -79,18 +73,15 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Dashboard</span>
           </Transition>
         </RouterLink>
       </div>
 
-      <!-- PKPT & Penugasan -->
-      <div
-        class="nav-section"
-        v-if="!auth.isReadOnly || auth.isIrban || auth.isInspektur"
-      >
-        <span v-if="!isCollapsed" class="nav-section-label">Pengawasan</span>
+      <!-- PKPT — superadmin, admin, irban, inspektur -->
+      <div class="nav-section" v-if="showMenu('pkpt')">
+        <span v-if="!isCollapsed" class="nav-label">Pengawasan</span>
 
         <RouterLink
           to="/pkpt"
@@ -109,12 +100,14 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">PKPT</span>
           </Transition>
         </RouterLink>
 
+        <!-- Penugasan — superadmin, admin, irban, inspektur -->
         <RouterLink
+          v-if="showMenu('penugasan')"
           to="/penugasan"
           class="sidebar-link"
           :class="{ active: route.path.startsWith('/penugasan') }"
@@ -129,18 +122,19 @@
               d="M5.127 3.502 5.25 3.5h9.5c.041 0 .082 0 .123.002A2.251 2.251 0 0 0 12.75 2h-5.5a2.25 2.25 0 0 0-2.123 1.502ZM1 10.25A2.25 2.25 0 0 1 3.25 8h13.5A2.25 2.25 0 0 1 19 10.25v5.5A2.25 2.25 0 0 1 16.75 18H3.25A2.25 2.25 0 0 1 1 15.75v-5.5ZM3.25 6.5c-.04 0-.082 0-.123.002A2.25 2.25 0 0 1 5.25 5h9.5a2.25 2.25 0 0 1 2.123 1.502A3.819 3.819 0 0 0 16.75 6.5H3.25Z"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Penugasan</span>
           </Transition>
         </RouterLink>
       </div>
 
-      <!-- Dokumen & TL -->
-      <div class="nav-section" v-if="auth.isAdmin || auth.isAdminTL">
-        <span v-if="!isCollapsed" class="nav-section-label">Dokumen</span>
+      <!-- Dokumen & LHP — superadmin, admin, admin_tl, irban, inspektur -->
+      <div class="nav-section" v-if="showMenu('dokumen')">
+        <span v-if="!isCollapsed && !showMenu('pkpt')" class="nav-label"
+          >Dokumen</span
+        >
 
         <RouterLink
-          v-if="auth.isAdmin"
           to="/dokumen"
           class="sidebar-link"
           :class="{ active: route.path.startsWith('/dokumen') || route.path.startsWith('/lhp') }"
@@ -157,10 +151,19 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Dokumen & LHP</span>
           </Transition>
         </RouterLink>
+      </div>
+
+      <!-- Tindak Lanjut — semua role kecuali irban & inspektur (mereka lihat saja) -->
+      <div class="nav-section" v-if="showMenu('tindaklanjut')">
+        <span
+          v-if="!isCollapsed && !showMenu('dokumen') && !showMenu('pkpt')"
+          class="nav-label"
+          >Tindak Lanjut</span
+        >
 
         <RouterLink
           to="/tindak-lanjut"
@@ -179,15 +182,15 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Tindak Lanjut</span>
           </Transition>
         </RouterLink>
       </div>
 
-      <!-- Monitoring -->
+      <!-- Monitoring & SKTJM — semua role -->
       <div class="nav-section">
-        <span v-if="!isCollapsed" class="nav-section-label">Monitoring</span>
+        <span v-if="!isCollapsed" class="nav-label">Monitoring</span>
 
         <RouterLink
           to="/monitoring"
@@ -204,8 +207,8 @@
               d="M15.5 2A1.5 1.5 0 0 0 14 3.5v13a1.5 1.5 0 0 0 3 0v-13A1.5 1.5 0 0 0 15.5 2ZM9.5 6A1.5 1.5 0 0 0 8 7.5v9a1.5 1.5 0 0 0 3 0v-9A1.5 1.5 0 0 0 9.5 6ZM3.5 10A1.5 1.5 0 0 0 2 11.5v5a1.5 1.5 0 0 0 3 0v-5A1.5 1.5 0 0 0 3.5 10Z"
             />
           </svg>
-          <Transition name="fade">
-            <span v-if="!isCollapsed">Monitoring PKPT</span>
+          <Transition name="fade-text">
+            <span v-if="!isCollapsed">Monitoring</span>
           </Transition>
         </RouterLink>
 
@@ -226,13 +229,17 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Cek SKTJM</span>
           </Transition>
         </RouterLink>
+      </div>
+
+      <!-- Master Pihak — superadmin & admin saja -->
+      <div class="nav-section" v-if="showMenu('pihak')">
+        <span v-if="!isCollapsed" class="nav-label">Master Data</span>
 
         <RouterLink
-          v-if="auth.isAdmin"
           to="/pihak"
           class="sidebar-link"
           :class="{ active: route.path.startsWith('/pihak') }"
@@ -247,18 +254,18 @@
               d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.153c.176.433-.02.911-.438 1.07A13.901 13.901 0 0 1 14.5 16Z"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Master Pihak</span>
           </Transition>
         </RouterLink>
       </div>
 
-      <!-- Admin Section -->
-      <div class="nav-section" v-if="auth.isAdmin">
-        <span v-if="!isCollapsed" class="nav-section-label">Administrasi</span>
+      <!-- Administrasi — superadmin & admin saja -->
+      <div class="nav-section" v-if="showMenu('admin')">
+        <span v-if="!isCollapsed" class="nav-label">Administrasi</span>
 
+        <!-- Log Aktivitas — superadmin & admin -->
         <RouterLink
-          v-if="auth.isAdmin"
           to="/log"
           class="sidebar-link"
           :class="{ active: route.path === '/log' }"
@@ -275,11 +282,12 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Log Aktivitas</span>
           </Transition>
         </RouterLink>
 
+        <!-- Kelola User — superadmin saja -->
         <RouterLink
           v-if="auth.isSuperAdmin"
           to="/users"
@@ -296,11 +304,12 @@
               d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM6 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM1.49 15.326a.78.78 0 0 1-.358-.442 3 3 0 0 1 4.308-3.516 6.484 6.484 0 0 0-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 0 1-2.07-.655ZM16.44 15.98a4.97 4.97 0 0 0 2.07-.654.78.78 0 0 0 .357-.442 3 3 0 0 0-4.308-3.517 6.484 6.484 0 0 1 1.907 3.96 2.32 2.32 0 0 1-.026.654ZM18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM5.304 16.19a.844.844 0 0 1-.277-.71 5 5 0 0 1 9.947 0 .843.843 0 0 1-.277.71A6.975 6.975 0 0 1 10 18a6.974 6.974 0 0 1-4.696-1.81Z"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Kelola User</span>
           </Transition>
         </RouterLink>
 
+        <!-- Settings — superadmin saja -->
         <RouterLink
           v-if="auth.isSuperAdmin"
           to="/settings"
@@ -319,20 +328,20 @@
               clip-rule="evenodd"
             />
           </svg>
-          <Transition name="fade">
+          <Transition name="fade-text">
             <span v-if="!isCollapsed">Pengaturan</span>
           </Transition>
         </RouterLink>
       </div>
     </nav>
 
-    <!-- User Info Bottom -->
+    <!-- ═══ FOOTER USER ═══ -->
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="user-avatar">
           {{ auth.user?.nama?.charAt(0)?.toUpperCase() || 'U' }}
         </div>
-        <Transition name="fade">
+        <Transition name="fade-text">
           <div v-if="!isCollapsed" class="user-info">
             <span class="user-name">{{ auth.user?.nama || 'User' }}</span>
             <span class="user-role">{{ roleLabel }}</span>
@@ -347,12 +356,15 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUIStore } from '@/stores/ui'
+import logoSrc from '@/assets/images/logo.png'
 
 const route = useRoute()
 const auth = useAuthStore()
+const ui = useUIStore()
 const isCollapsed = ref(false)
-const logoUrl = ref(null) // nanti diisi dari settings
 
+// ═══ ROLE LABEL ═══
 const roleLabel = computed(() => {
   const labels = {
     superadmin: 'Super Admin',
@@ -363,173 +375,265 @@ const roleLabel = computed(() => {
   }
   return labels[auth.user?.role] || auth.user?.role
 })
+
+// ═══ MENU VISIBILITY PER ROLE ═══
+const showMenu = (menu) => {
+  const role = auth.user?.role
+
+  const rules = {
+    // PKPT: superadmin, admin, irban, inspektur (BUKAN admin_tl)
+    pkpt: ['superadmin', 'admin', 'irban', 'inspektur'].includes(role),
+
+    // Penugasan: sama dengan PKPT
+    penugasan: ['superadmin', 'admin', 'irban', 'inspektur'].includes(role),
+
+    // Dokumen: semua role
+    dokumen: ['superadmin', 'admin', 'admin_tl', 'irban', 'inspektur'].includes(role),
+
+    // Tindak Lanjut: semua role
+    tindaklanjut: ['superadmin', 'admin', 'admin_tl', 'irban', 'inspektur'].includes(role),
+
+    // Master Pihak: superadmin & admin saja
+    pihak: ['superadmin', 'admin'].includes(role),
+
+    // Administrasi (Log, User, Settings): superadmin & admin saja
+    admin: ['superadmin', 'admin'].includes(role),
+  }
+
+  return rules[menu] ?? false
+}
 </script>
 
 <style scoped>
+/* ═══════════════════ WRAPPER ═══════════════════ */
 .sidebar {
+  width: 240px;
+  min-width: 240px;
+  height: 100vh;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
-}
-.sidebar-collapsed {
-  width: 68px;
-  min-width: 68px;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
 }
 
-/* HEADER */
+.sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+/* ═══════════════════ HEADER ═══════════════════ */
 .sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.75rem;
+  height: 60px;
+  min-height: 60px;
   border-bottom: 1px solid var(--border-color);
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
-
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
   overflow: hidden;
-  padding: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-logo-img {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
-.sidebar-logo-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding : 10px;
-}
-
-.sidebar-logo-text {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding:10px;
-}
-
-.logo-app-name {
-  font-size: 0.9rem;
+.sidebar-app-name {
+  font-size: 0.875rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   white-space: nowrap;
-  text-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
-}
-
-.logo-instansi {
-  font-size: 0.65rem;
-  color: #64748b;
-  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 12px var(--accent-glow);
 }
 
 .sidebar-toggle {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.35rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
 .sidebar-toggle:hover {
   background-color: var(--bg-hover);
   color: var(--text-primary);
+  border-color: var(--border-input);
 }
 
-/* NAV */
+/* ═══════════════════ TAHUN SELECTOR ═══════════════════ */
+.tahun-selector {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.tahun-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.375rem;
+}
+
+.tahun-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.tahun-btn {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-color);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tahun-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.tahun-btn.active {
+  background-color: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ═══════════════════ NAV ═══════════════════ */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.75rem 0.75rem;
+  padding: 0.625rem 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .nav-section {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
-.nav-section-label {
+.nav-label {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.5rem 0.75rem 0.25rem;
+  padding: 0.4rem 0.625rem 0.2rem;
+  white-space: nowrap;
 }
 
 .nav-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
 
-/* FOOTER */
+.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+/* ═══════════════════ FOOTER ═══════════════════ */
 .sidebar-footer {
+  padding: 0.5rem;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.75rem;
   background: var(--bg-hover);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-400));
+  background: linear-gradient(135deg, var(--accent), #60a5fa);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .user-name {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .user-role {
-  font-size: 0.65rem;
-  color: #64748b;
+  font-size: 0.62rem;
+  color: var(--text-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* TRANSITIONS */
-.fade-enter-active,
-.fade-leave-active {
+/* ═══════════════════ TRANSITIONS ═══════════════════ */
+.fade-text-enter-active,
+.fade-text-leave-active {
   transition: opacity 0.15s ease;
+  overflow: hidden;
 }
-.fade-enter-from,
-.fade-leave-to {
+
+.fade-text-enter-from,
+.fade-text-leave-to {
   opacity: 0;
 }
 </style>

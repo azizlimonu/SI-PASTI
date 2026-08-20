@@ -66,11 +66,22 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
+  // Helper cek apakah user bisa edit (bukan read-only)
+  const canEdit = computed(() =>
+    ['superadmin', 'admin', 'admin_tl'].includes(user.value?.role)
+  )
+
+  // Helper cek apakah user bisa akses lintas keirbanan
+  const isLintas = computed(() =>
+    ['superadmin', 'admin_tl', 'inspektur'].includes(user.value?.role)
+  )
+
   return {
     token, user, loading, error,
     isLoggedIn, isSuperAdmin, isAdmin,
     isAdminTL, isIrban, isInspektur,
     isReadOnly, keirbanan, hasAllAccess,
-    login, changePassword, logout
+    login, changePassword, logout, canEdit,
+    isLintas
   }
 })

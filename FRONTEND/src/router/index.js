@@ -29,8 +29,9 @@ const router = createRouter({
         {
           path: 'pkpt',
           name: 'pkpt',
-          component: () => import('@/views/pkpt/PkptListView.vue')
-        },
+          component: () => import('@/views/pkpt/PkptListView.vue'),
+          meta: { filterTahun: true }
+        }, ,
         {
           path: 'pkpt/:id',
           name: 'pkpt-detail',
@@ -39,12 +40,14 @@ const router = createRouter({
         {
           path: 'penugasan',
           name: 'penugasan',
-          component: () => import('@/views/penugasan/PenugasanListView.vue')
+          component: () => import('@/views/penugasan/PenugasanListView.vue'),
+          meta: { filterTahun: true }
         },
         {
           path: 'penugasan/:id',
           name: 'penugasan-detail',
-          component: () => import('@/views/penugasan/PenugasanDetailView.vue')
+          component: () => import('@/views/penugasan/PenugasanDetailView.vue'),
+          meta: { filterTahun: true }
         },
         {
           path: 'tindak-lanjut',
