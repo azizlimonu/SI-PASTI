@@ -31,7 +31,7 @@ const router = createRouter({
           name: 'pkpt',
           component: () => import('@/views/pkpt/PkptListView.vue'),
           meta: { filterTahun: true }
-        }, ,
+        },
         {
           path: 'pkpt/:id',
           name: 'pkpt-detail',
