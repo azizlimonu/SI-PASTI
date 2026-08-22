@@ -37,20 +37,94 @@
 
     <!-- ═══ TAHUN AKTIF (hanya tampil kalau tidak collapsed) ═══ -->
     <Transition name="fade-text">
-      <div v-if="!isCollapsed" class="tahun-selector">
+      <div
+        v-if="!isCollapsed"
+        class="tahun-selector"
+        @click="showTahunModal = true"
+      >
         <span class="tahun-label">Tahun PKPT</span>
-        <div class="tahun-tabs">
-          <button
-            v-for="tahun in ui.daftarTahun"
-            :key="tahun"
-            :class="['tahun-btn', { active: ui.tahunAktif === tahun }]"
-            @click="ui.setTahunAktif(tahun)"
+        <div class="tahun-display">
+          <span class="tahun-value">{{ ui.tahunAktif }}</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            style="width:12px;height:12px;color:var(--text-muted);"
           >
-            {{ tahun }}
-          </button>
+            <path
+              d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z"
+            />
+            <path
+              d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z"
+            />
+          </svg>
         </div>
       </div>
     </Transition>
+
+    <!-- Modal Ganti Tahun -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showTahunModal"
+          class="modal-overlay"
+          @click.self="showTahunModal = false"
+        >
+          <div class="modal-container" style="max-width:20rem;">
+            <div class="modal-header">
+              <h3
+                style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0;"
+              >
+                Pilih Tahun PKPT
+              </h3>
+              <button class="btn-icon" @click="showTahunModal = false">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  style="width:18px;height:18px;color:var(--text-muted);"
+                >
+                  <path
+                    d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p
+                style="font-size:0.8rem; color:var(--text-muted); margin:0 0 1rem;"
+              >
+                Mengganti tahun akan me-reload halaman ke Dashboard dan memuat
+                ulang data sesuai tahun yang dipilih.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                <button
+                  v-for="tahun in daftarTahun"
+                  :key="tahun"
+                  :class="['tahun-option-btn', { active: ui.tahunAktif === tahun }]"
+                  @click="gantiTahun(tahun)"
+                >
+                  {{ tahun }}
+                  <svg
+                    v-if="ui.tahunAktif === tahun"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    style="width:14px;height:14px;color:var(--accent);"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- ═══ NAVIGATION ═══ -->
     <nav class="sidebar-nav">
@@ -376,6 +450,25 @@ const roleLabel = computed(() => {
   return labels[auth.user?.role] || auth.user?.role
 })
 
+// === Ganti Tahun PKPT ====
+const showTahunModal = ref(false)
+
+const currentYear = new Date().getFullYear()
+const daftarTahun = Array.from(
+  { length: 5 },
+  (_, i) => currentYear + 1 - i
+)
+
+const gantiTahun = (tahun) => {
+  if (ui.tahunAktif === tahun) {
+    showTahunModal.value = false
+    return
+  }
+  ui.setTahunAktif(tahun)
+  showTahunModal.value = false
+  router.push('/')
+}
+
 // ═══ MENU VISIBILITY PER ROLE ═══
 const showMenu = (menu) => {
   const role = auth.user?.role
@@ -636,4 +729,60 @@ const showMenu = (menu) => {
 .fade-text-leave-to {
   opacity: 0;
 }
+
+/* =================== STYLE TAHUN PKPT ================ */
+.tahun-selector {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tahun-selector:hover {
+  background: var(--bg-hover);
+}
+
+.tahun-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+}
+
+.tahun-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.tahun-option-btn {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tahun-option-btn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.tahun-option-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
 </style>

@@ -238,8 +238,8 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 .topbar {
   height: 60px;
   min-height: 60px;
-  background-color: var(--color-navy-800);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
+  background-color: var(--bg-topbar);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -294,18 +294,19 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: color-mix(in srgb, var(--color-navy-700) 50%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   padding: 0.375rem 0.75rem 0.375rem 0.375rem;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
+  color: var(--text-primary, #e2e8f0);
 }
 
 .user-btn:hover {
   background-color: var(--color-navy-700);
   border-color: var(--color-navy-600);
+  color: #ffffff;
 }
 
 .topbar-avatar {
@@ -325,7 +326,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 .topbar-username {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #e2e8f0;
+  color: inherit;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -338,8 +339,8 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   top: calc(100% + 8px);
   right: 0;
   width: 240px;
-  background-color: var(--color-navy-800);
-  border: 1px solid color-mix(in srgb, var(--color-navy-600) 50%, transparent);
+  background-color: var(--bg-surface);  /* sudah benar */
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   overflow: hidden;
