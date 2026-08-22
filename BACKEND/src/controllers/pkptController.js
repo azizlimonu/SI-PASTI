@@ -30,7 +30,7 @@ const getPkpt = async (req, res) => {
             {
               model: Spt,
               as: 'spt',
-              attributes: ['id', 'tanggal_spt']
+              attributes: ['id', 'nomor_spt', 'tanggal_mulai', 'tanggal_selesai']
             }
           ]
         },
@@ -77,7 +77,7 @@ const getPkptById = async (req, res) => {
             {
               model: Spt,
               as: 'spt',
-              attributes: ['id', 'nomor_spt', 'tanggal_spt']
+              attributes: ['id', 'nomor_spt', 'tanggal_mulai', 'tanggal_selesai']
             }
           ]
         },

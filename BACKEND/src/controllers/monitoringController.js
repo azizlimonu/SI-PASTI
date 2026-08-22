@@ -244,7 +244,7 @@ const getAlertSPT = async (req, res) => {
         {
           model: Spt, as: 'spt',
           where: {
-            tanggal_spt: { [Op.lte]: tigaPuluhHariLalu }
+            tanggal_mulai: { [Op.lte]: tigaPuluhHariLalu }
           },
           required: true
         },
@@ -261,7 +261,7 @@ const getAlertSPT = async (req, res) => {
       .filter(p => !p.dokumens || p.dokumens.length === 0)
       .map(p => {
         const hariTerlambat = Math.floor(
-          (new Date() - new Date(p.spt.tanggal_spt)) / (1000 * 60 * 60 * 24)
+          (new Date() - new Date(p.spt.tanggal_mulai)) / (1000 * 60 * 60 * 24)
         );
         return {
           penugasan_id: p.id,
@@ -269,7 +269,9 @@ const getAlertSPT = async (req, res) => {
           keirbanan: p.pkpt.keirbanan,
           tahun_pkpt: p.pkpt.tahun,
           nomor_spt: p.spt.nomor_spt,
-          tanggal_spt: p.spt.tanggal_spt,
+          tanggal_spt: p.spt.tanggal_mulai,
+          tanggal_mulai: p.spt.tanggal_mulai,
+          tanggal_selesai: p.spt.tanggal_selesai,
           hari_terlambat: hariTerlambat
         };
       })
@@ -468,7 +470,7 @@ const getProgressKeirbanan = async (req, res) => {
       tigaPuluhHariLalu.setDate(tigaPuluhHariLalu.getDate() - 30);
 
       const sptAlert = await Spt.count({
-        where: { tanggal_spt: { [Op.lte]: tigaPuluhHariLalu } },
+        where: { tanggal_mulai: { [Op.lte]: tigaPuluhHariLalu } },
         include: [{
           model: Penugasan, as: 'penugasan',
           attributes: [],

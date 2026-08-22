@@ -247,6 +247,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import logoUrl from '@/assets/images/logo.png'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -255,7 +256,6 @@ const form = ref({ nip: '', password: '' })
 const showPassword = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
-const logoUrl = ref(null)
 
 const handleLogin = async () => {
   errorMsg.value = ''
