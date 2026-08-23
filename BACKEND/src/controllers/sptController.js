@@ -57,8 +57,21 @@ const createSpt = async (req, res) => {
       penugasan_id, nomor_spt,
       jenis_kegiatan, jenis_kegiatan_lainnya,
       uraian_kegiatan, tanggal_mulai,
-      tanggal_selesai, tim
+      tanggal_selesai
     } = req.body;
+
+    let tim = [];
+    if (req.body.tim) {
+      try {
+        tim = typeof req.body.tim === 'string'
+          ? JSON.parse(req.body.tim)
+          : req.body.tim;
+      } catch (e) {
+        tim = [];
+      }
+    }
+
+    const jumlah_hari_input = req.body.jumlah_hari;
 
     if (!penugasan_id || !nomor_spt || !jenis_kegiatan ||
       !uraian_kegiatan || !tanggal_mulai || !tanggal_selesai) {
@@ -76,11 +89,19 @@ const createSpt = async (req, res) => {
     }
 
     // Hitung jumlah hari otomatis
-    const mulai = new Date(tanggal_mulai);
-    const selesai = new Date(tanggal_selesai);
-    const jumlah_hari = Math.floor(
-      (selesai - mulai) / (1000 * 60 * 60 * 24)
-    ) + 1;
+    // Prioritas: input manual jumlah_hari (untuk kasus WFH/WFA/libur/agenda lain)
+    // Jika tidak diisi manual, hitung otomatis dari selisih tanggal
+    let jumlah_hari;
+    if (jumlah_hari_input !== undefined && jumlah_hari_input !== '') {
+      jumlah_hari = parseInt(jumlah_hari_input);
+    } else {
+      const mulai = new Date(tanggal_mulai);
+      const selesai = new Date(tanggal_selesai);
+      jumlah_hari = Math.floor(
+        (selesai - mulai) / (1000 * 60 * 60 * 24)
+      ) + 1;
+    }
+
 
     if (jumlah_hari <= 0) {
       return res.status(400).json({
@@ -189,22 +210,26 @@ const createSpt = async (req, res) => {
 // ═══════════════════════════════════════════
 const updateSpt = async (req, res) => {
   try {
-    const {
-      nomor_spt, jenis_kegiatan, jenis_kegiatan_lainnya,
-      uraian_kegiatan, tanggal_mulai, tanggal_selesai,
-      link_spt, tim
-    } = req.body;
-    const user = req.user;
+    const nomor_spt = req.body.nomor_spt
+    const jenis_kegiatan = req.body.jenis_kegiatan
+    const jenis_kegiatan_lainnya = req.body.jenis_kegiatan_lainnya
+    const uraian_kegiatan = req.body.uraian_kegiatan
+    const tanggal_mulai = req.body.tanggal_mulai
+    const tanggal_selesai = req.body.tanggal_selesai
+    const link_spt = req.body.link_spt
+    const jumlah_hari_input = req.body.jumlah_hari
 
-    // Hitung ulang jumlah hari jika tanggal berubah
-    let jumlah_hari = spt.jumlah_hari;
-    if (tanggal_mulai || tanggal_selesai) {
-      const mulai = new Date(tanggal_mulai || spt.tanggal_mulai);
-      const selesai = new Date(tanggal_selesai || spt.tanggal_selesai);
-      jumlah_hari = Math.floor(
-        (selesai - mulai) / (1000 * 60 * 60 * 24)
-      ) + 1;
+    let timData = []
+    if (req.body.tim) {
+      try {
+        timData = typeof req.body.tim === 'string'
+          ? JSON.parse(req.body.tim)
+          : req.body.tim
+      } catch (e) {
+        timData = []
+      }
     }
+    const user = req.user;
 
     const spt = await Spt.findByPk(req.params.id, {
       include: [
@@ -232,6 +257,19 @@ const updateSpt = async (req, res) => {
       });
     }
 
+    // Prioritas: input manual jumlah_hari dari user (untuk kasus WFH/WFA/libur/agenda lain)
+    // Jika tidak diisi manual, hitung otomatis dari selisih tanggal
+    let jumlah_hari = spt.jumlah_hari;
+    if (jumlah_hari_input !== undefined && jumlah_hari_input !== '') {
+      jumlah_hari = parseInt(jumlah_hari_input);
+    } else if (tanggal_mulai || tanggal_selesai) {
+      const mulai = new Date(tanggal_mulai || spt.tanggal_mulai);
+      const selesai = new Date(tanggal_selesai || spt.tanggal_selesai);
+      jumlah_hari = Math.floor(
+        (selesai - mulai) / (1000 * 60 * 60 * 24)
+      ) + 1;
+    }
+
     await spt.update({
       nomor_spt: nomor_spt || spt.nomor_spt,
       jenis_kegiatan: jenis_kegiatan || spt.jenis_kegiatan,
@@ -243,22 +281,22 @@ const updateSpt = async (req, res) => {
       uraian_kegiatan: uraian_kegiatan || spt.uraian_kegiatan,
       tanggal_mulai: tanggal_mulai || spt.tanggal_mulai,
       tanggal_selesai: tanggal_selesai || spt.tanggal_selesai,
-      jumlah_hari,
+      jumlah_hari: jumlah_hari ? parseInt(jumlah_hari) : spt.jumlah_hari,
       file_spt: req.file ? req.file.path : spt.file_spt,
       link_spt: link_spt !== undefined ? link_spt : spt.link_spt
-    });
+    })
 
     // Update tim jika ada
-    if (tim && Array.isArray(tim)) {
-      await Tim.destroy({ where: { spt_id: spt.id } });
-      if (tim.length > 0) {
-        const timData = tim.map(t => ({
+    if (timData !== undefined) {
+      await Tim.destroy({ where: { spt_id: spt.id } })
+      if (timData.length > 0) {
+        const timRows = timData.map(t => ({
           spt_id: spt.id,
           nip: t.nip,
           nama: t.nama,
           jabatan_tim: t.jabatan_tim
-        }));
-        await Tim.bulkCreate(timData);
+        }))
+        await Tim.bulkCreate(timRows)
       }
     }
 

@@ -350,7 +350,10 @@ const confirmDelete = async () => {
   }
 }
 
-watch(() => ui.tahunAktif, loadData)
+watch(() => ui.tahunAktif, () => {
+  penugasan.pagination.page = 1
+  loadData()
+})
 
 onMounted(async () => {
   loadData()

@@ -29,7 +29,9 @@ export const usePenugasanStore = defineStore('penugasan', () => {
     error.value = null
     try {
       const res = await penugasanService.getAll({
-        ...defaultParams.value,
+        page: pagination.value.page,
+        limit: pagination.value.limit,
+        tahun: ui.tahunAktif,
         ...extraParams
       })
       list.value = res.data.data

@@ -11,11 +11,12 @@ const { Op } = require('sequelize');
 // ═══════════════════════════════════════════
 const getPenugasan = async (req, res) => {
   try {
-    const { pkpt_id, status, search } = req.query;
+    const { pkpt_id, status, search, tahun } = req.query
     const user = req.user;
 
     // Build where untuk PKPT (filter keirbanan lewat PKPT)
     const pkptWhere = { ...getKeirbanFilter(user) };
+    if (tahun) pkptWhere.tahun = tahun;
     if (pkpt_id) pkptWhere.id = pkpt_id;
 
     const where = {};

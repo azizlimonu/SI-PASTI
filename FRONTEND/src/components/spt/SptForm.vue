@@ -78,12 +78,11 @@
       <div>
         <label class="input-label">Jumlah Hari</label>
         <input
-          :value="jumlahHari"
-          type="text"
+          v-model="form.jumlah_hari"
+          type="number"
           class="input-field"
-          readonly
-          style="opacity:0.7; cursor:not-allowed;"
-          placeholder="Otomatis"
+          placeholder="Jumlah hari (auto)"
+          min="1"
         />
       </div>
     </div>
@@ -210,6 +209,7 @@ const form = ref({
   uraian_kegiatan: props.item?.uraian_kegiatan || '',
   tanggal_mulai: props.item?.tanggal_mulai || '',
   tanggal_selesai: props.item?.tanggal_selesai || '',
+   jumlah_hari: props.item?.jumlah_hari || '',
   file_spt: null,
   link_spt: props.item?.link_spt || '',
   tim: props.item?.tims?.map(t => ({
@@ -217,15 +217,13 @@ const form = ref({
   })) || []
 })
 
-const jumlahHari = computed(() => {
-  if (!form.value.tanggal_mulai || !form.value.tanggal_selesai) return ''
+const hitungHari = () => {
+  if (!form.value.tanggal_mulai || !form.value.tanggal_selesai) return
   const mulai = new Date(form.value.tanggal_mulai)
   const selesai = new Date(form.value.tanggal_selesai)
   const diff = Math.floor((selesai - mulai) / (1000 * 60 * 60 * 24)) + 1
-  return diff > 0 ? `${diff} hari` : 'Tanggal tidak valid'
-})
-
-const hitungHari = () => {} // computed sudah handle
+  if (diff > 0) form.value.jumlah_hari = diff
+}// computed sudah handle
 
 const tambahAnggota = () => {
   form.value.tim.push({ nip: '', nama: '', jabatan_tim: '' })

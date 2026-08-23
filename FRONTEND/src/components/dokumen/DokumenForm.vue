@@ -11,6 +11,17 @@
         <option value="" disabled>Pilih jenis dokumen</option>
         <option v-for="j in JENIS_DOKUMEN" :key="j" :value="j">{{ j }}</option>
       </select>
+      <div v-if="form.jenis_dokumen === 'Lainnya'">
+        <label class="input-label"
+          >Nama Jenis Dokumen <span style="color:#f87171;">*</span></label
+        >
+        <input
+          v-model="form.judul_dokumen"
+          type="text"
+          class="input-field"
+          placeholder="Contoh: Telaah Pemeriksaan Khusus, Berita Acara Pembukaan"
+        />
+      </div>
     </div>
 
     <div>
@@ -106,10 +117,24 @@ const judulPlaceholder = computed(() => {
   return map[form.value.jenis_dokumen] || 'Masukkan judul dokumen'
 })
 
+watch(() => form.value.jenis_dokumen, (val) => {
+  if (val !== 'Lainnya') {
+    // Kosongkan judul supaya user isi manual
+    form.value.judul_dokumen = ''
+  }
+})
+
 const handleSubmit = () => {
   errorMsg.value = ''
   if (!form.value.jenis_dokumen) { errorMsg.value = 'Jenis dokumen wajib dipilih.'; return }
-  if (!form.value.judul_dokumen.trim()) { errorMsg.value = 'Judul dokumen wajib diisi.'; return }
+if (form.value.jenis_dokumen !== 'Lainnya' && !form.value.judul_dokumen.trim()) {
+  errorMsg.value = 'Judul dokumen wajib diisi.'
+  return
+}
+if (form.value.jenis_dokumen === 'Lainnya' && !form.value.judul_dokumen.trim()) {
+  errorMsg.value = 'Nama jenis dokumen wajib diisi.'
+  return
+}
   if (!form.value.file && !form.value.link_dokumen) {
     errorMsg.value = 'Upload file atau isi link dokumen, minimal salah satu.'; return
   }

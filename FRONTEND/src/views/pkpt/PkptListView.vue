@@ -340,7 +340,9 @@ const confirmDelete = async () => {
 }
 
 // Reload kalau tahun aktif berubah
-watch(() => ui.tahunAktif, loadData)
-
+watch(() => ui.tahunAktif, () => {
+  pkpt.pagination.page = 1
+  loadData()
+})
 onMounted(loadData)
 </script>
