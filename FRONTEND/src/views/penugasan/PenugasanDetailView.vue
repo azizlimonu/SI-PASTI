@@ -439,6 +439,38 @@
           </div>
         </div>
       </div>
+
+      <!-- Tab: Temuan -->
+      <div v-if="activeTab === 'temuan'">
+        <TabTemuan
+          :penugasan-id="Number(route.params.id)"
+          :dokumen-list="dokumenList"
+        />
+      </div>
+
+      <!-- Tab: Rekomendasi -->
+      <div v-if="activeTab === 'rekomendasi'">
+        <TabRekomendasi
+          :penugasan-id="Number(route.params.id)"
+          :dokumen-list="dokumenList"
+        />
+      </div>
+
+      <!-- Tab: Tindak Lanjut -->
+      <div v-if="activeTab === 'tindaklanjut'">
+        <TabTindakLanjut
+          :penugasan-id="Number(route.params.id)"
+          :dokumen-list="dokumenList"
+        />
+      </div>
+
+      <!-- Tab: Bukti TL -->
+      <div v-if="activeTab === 'bukti'">
+        <TabBuktiTL
+          :penugasan-id="Number(route.params.id)"
+          :dokumen-list="dokumenList"
+        />
+      </div>
     </div>
 
     <!-- SPT Form Modal -->
@@ -503,6 +535,10 @@ import TimForm from '@/components/spt/TimForm.vue'
 import DokumenForm from '@/components/dokumen/DokumenForm.vue'
 import { formatDate } from '@/utils/format'
 import { BADGE_COLOR } from '@/utils/constants'
+import TabTemuan from '@/components/penugasan/TabTemuan.vue'
+import TabRekomendasi from '@/components/penugasan/TabRekomendasi.vue'
+import TabTindakLanjut from '@/components/penugasan/TabTindakLanjut.vue'
+import TabBuktiTL from '@/components/penugasan/TabBuktiTL.vue'
 
 const route = useRoute()
 const penugasan = usePenugasanStore()
@@ -523,10 +559,22 @@ const showDokumenForm = ref(false)
 const showConfirmDokumen = ref(false)
 const deleteDokTarget = ref(null)
 
-const tabs = computed(() => [
-  { key: 'spt', label: 'SPT & Tim' },
-  { key: 'dokumen', label: 'Dokumen', badge: dokumenList.value.length || null }
-])
+const tabs = computed(() => {
+  const baseTabs = [
+    { key: 'spt', label: 'SPT & Tim' }
+  ]
+  // Tab tambahan hanya untuk admin & superadmin keirbanan
+  if (auth.isAdmin) {
+    baseTabs.push(
+      { key: 'dokumen', label: 'Dokumen', badge: dokumenList.value.length || null },
+      { key: 'temuan', label: 'Temuan' },
+      { key: 'rekomendasi', label: 'Rekomendasi' },
+      { key: 'tindaklanjut', label: 'Tindak Lanjut' },
+      { key: 'bukti', label: 'Bukti TL' }
+    )
+  }
+  return baseTabs
+})
 
 const jabatanColor = (jabatan) => {
   const map = { 'Ketua Tim': 'blue', 'Pengendali Teknis': 'purple', 'Pengendali Mutu': 'yellow', 'Anggota': 'gray' }
