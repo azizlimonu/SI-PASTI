@@ -13,6 +13,7 @@ const TindakLanjut = require('./TindakLanjut');
 const BuktiTL = require('./BuktiTL');
 const TindakLanjutBukti = require('./TindakLanjutBukti');
 const Pihak = require('./Pihak');
+const SetoranTgr = require('./SetoranTgr');
 
 // ═══════════════════════════════════════════
 // RELASI
@@ -105,6 +106,14 @@ BuktiTL.belongsToMany(TindakLanjut, {
 User.hasMany(BuktiTL, { foreignKey: 'uploaded_by', as: 'buktis' });
 BuktiTL.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader' });
 
+// Rekomendasi → SetoranTgr
+Rekomendasi.hasMany(SetoranTgr, { foreignKey: 'rekomendasi_id', as: 'setorans' });
+SetoranTgr.belongsTo(Rekomendasi, { foreignKey: 'rekomendasi_id', as: 'rekomendasi' });
+
+// User → SetoranTgr (creator)
+User.hasMany(SetoranTgr, { foreignKey: 'created_by', as: 'setorans' });
+SetoranTgr.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
 module.exports = {
   sequelize,
   User,
@@ -119,5 +128,6 @@ module.exports = {
   TindakLanjut,
   BuktiTL,
   TindakLanjutBukti,
-  Pihak
+  Pihak,
+  SetoranTgr
 };

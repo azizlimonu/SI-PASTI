@@ -22,10 +22,12 @@ const {
   getRekomendasiByTemuan,
   createRekomendasi,
   updateRekomendasi,
-  deleteRekomendasi
+  deleteRekomendasi,
+  tambahSetoranTgr,
+  getSetoranByRekomendasi
 } = require('../controllers/rekomendasiController');
 
-const { authenticate, canEditDokumen } = require('../middleware/auth');
+const { authenticate, canEditDokumen, canEditTindakLanjut } = require('../middleware/auth');
 
 // Setup multer
 const storage = multer.diskStorage({
@@ -57,6 +59,36 @@ const handleUpload = (req, res, next) => {
   });
 };
 
+// Setup multer khusus bukti setoran TGR
+const storageSetoran = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/bukti/'),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'SETORAN-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const uploadSetoran = multer({
+  storage: storageSetoran,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format file tidak diizinkan.'));
+    }
+  }
+});
+
+const handleUploadSetoran = (req, res, next) => {
+  uploadSetoran.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, message: err.message });
+    next();
+  });
+};
+
 router.use(authenticate);
 
 // Dokumen routes
@@ -77,5 +109,9 @@ router.get('/temuan/:temuan_id/rekomendasi', getRekomendasiByTemuan);
 router.post('/rekomendasi', canEditDokumen, createRekomendasi);
 router.put('/rekomendasi/:id', canEditDokumen, updateRekomendasi);
 router.delete('/rekomendasi/:id', canEditDokumen, deleteRekomendasi);
+
+// Setoran TGR routes
+router.get('/rekomendasi/:id/setoran', getSetoranByRekomendasi);
+router.post('/rekomendasi/:id/setoran', canEditTindakLanjut, handleUploadSetoran, tambahSetoranTgr);
 
 module.exports = router;

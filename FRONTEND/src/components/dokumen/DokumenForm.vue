@@ -11,12 +11,12 @@
         <option value="" disabled>Pilih jenis dokumen</option>
         <option v-for="j in JENIS_DOKUMEN" :key="j" :value="j">{{ j }}</option>
       </select>
-      <div v-if="form.jenis_dokumen === 'Lainnya'">
+      <div v-if="form.jenis_dokumen === 'Lainnya'" style="margin-top:0.75rem;">
         <label class="input-label"
           >Nama Jenis Dokumen <span style="color:#f87171;">*</span></label
         >
         <input
-          v-model="form.judul_dokumen"
+          v-model="form.jenis_dokumen_lainnya"
           type="text"
           class="input-field"
           placeholder="Contoh: Telaah Pemeriksaan Khusus, Berita Acara Pembukaan"
@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import AppDropzone from '@/components/common/AppDropzone.vue'
 import { JENIS_DOKUMEN } from '@/utils/constants'
 
@@ -101,6 +101,7 @@ const errorMsg = ref('')
 
 const form = ref({
   jenis_dokumen: '',
+  jenis_dokumen_lainnya: '',
   judul_dokumen: '',
   file: null,
   link_dokumen: ''
@@ -119,24 +120,28 @@ const judulPlaceholder = computed(() => {
 
 watch(() => form.value.jenis_dokumen, (val) => {
   if (val !== 'Lainnya') {
-    // Kosongkan judul supaya user isi manual
+    form.value.jenis_dokumen_lainnya = ''
     form.value.judul_dokumen = ''
   }
 })
 
 const handleSubmit = () => {
   errorMsg.value = ''
-  if (!form.value.jenis_dokumen) { errorMsg.value = 'Jenis dokumen wajib dipilih.'; return }
-if (form.value.jenis_dokumen !== 'Lainnya' && !form.value.judul_dokumen.trim()) {
-  errorMsg.value = 'Judul dokumen wajib diisi.'
-  return
-}
-if (form.value.jenis_dokumen === 'Lainnya' && !form.value.judul_dokumen.trim()) {
-  errorMsg.value = 'Nama jenis dokumen wajib diisi.'
-  return
-}
+  if (!form.value.jenis_dokumen) {
+    errorMsg.value = 'Jenis dokumen wajib dipilih.'
+    return
+  }
+  if (form.value.jenis_dokumen === 'Lainnya' && !form.value.jenis_dokumen_lainnya.trim()) {
+    errorMsg.value = 'Nama jenis dokumen wajib diisi.'
+    return
+  }
+  if (!form.value.judul_dokumen.trim()) {
+    errorMsg.value = 'Judul dokumen wajib diisi.'
+    return
+  }
   if (!form.value.file && !form.value.link_dokumen) {
-    errorMsg.value = 'Upload file atau isi link dokumen, minimal salah satu.'; return
+    errorMsg.value = 'Upload file atau isi link dokumen, minimal salah satu.'
+    return
   }
   emit('submit', { ...form.value })
 }

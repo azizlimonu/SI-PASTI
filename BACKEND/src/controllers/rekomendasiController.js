@@ -1,6 +1,7 @@
 const {
   Rekomendasi, Temuan, DokumenPenugasan,
-  Penugasan, Pkpt, Pihak, User, TindakLanjut
+  Penugasan, Pkpt, Pihak, User, TindakLanjut,
+  SetoranTgr, sequelize
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 
@@ -31,9 +32,17 @@ const getRekomendasiByTemuan = async (req, res) => {
       distinct: true
     });
 
+    const data = rows.map(r => {
+      const rj = r.toJSON();
+      rj.ada_bukti_tl = (rj.tindakLanjuts || []).some(
+        tl => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
+      );
+      return rj;
+    });
+
     return res.json({
       success: true,
-      data: rows,
+      data,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -103,10 +112,34 @@ const createRekomendasi = async (req, res) => {
       });
     }
 
+    let finalPihakId = pihak_id || null;
+
+    if (!finalPihakId && pihak && pihak.nama && pihak.jenis_pihak) {
+      const validJenis = ['ASN', 'Instansi/OPD', 'Perusahaan', 'Perorangan', 'Lainnya'];
+      if (!validJenis.includes(pihak.jenis_pihak)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Jenis pihak tidak valid.'
+        });
+      }
+      const pihakBaru = await Pihak.create({
+        nama: pihak.nama,
+        nip: pihak.nip || null,
+        nik: pihak.nik || null,
+        jabatan: pihak.jabatan || null,
+        instansi_perusahaan: pihak.instansi_perusahaan || null,
+        jenis_pihak: pihak.jenis_pihak,
+        jenis_pihak_lainnya: pihak.jenis_pihak === 'Lainnya' ? (pihak.jenis_pihak_lainnya || null) : null,
+        keterangan: pihak.keterangan || null,
+        created_by: user.id
+      });
+      finalPihakId = pihakBaru.id;
+    }
+
     const rekomendasi = await Rekomendasi.create({
       temuan_id,
       uraian_rekomendasi,
-      pihak_id: pihak_id || null,
+      pihak_id: finalPihakId,
       ditujukan_kepada,
       adalah_tgr: adalah_tgr || false,
       nilai_temuan: adalah_tgr ? nilai_temuan : null,
@@ -288,9 +321,147 @@ const deleteRekomendasi = async (req, res) => {
   }
 };
 
+// ═══════════════════════════════════════════
+// TAMBAH SETORAN TGR
+// ═══════════════════════════════════════════
+const tambahSetoranTgr = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { jumlah_setoran, tanggal_setor, keterangan, link_bukti } = req.body;
+    const user = req.user;
+
+    if (!jumlah_setoran || !tanggal_setor) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Jumlah setoran dan tanggal setor wajib diisi.'
+      });
+    }
+
+    if (!req.file && !link_bukti) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Upload file atau isi link bukti setor, minimal salah satu wajib diisi.'
+      });
+    }
+
+    const rekomendasi = await Rekomendasi.findByPk(req.params.id, {
+      include: [{
+        model: Temuan,
+        as: 'temuan',
+        include: [{
+          model: DokumenPenugasan,
+          as: 'dokumen',
+          include: [{
+            model: Penugasan,
+            as: 'penugasan',
+            include: [{ model: Pkpt, as: 'pkpt' }]
+          }]
+        }]
+      }],
+      transaction
+    });
+
+    if (!rekomendasi) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Rekomendasi tidak ditemukan.'
+      });
+    }
+
+    if (!rekomendasi.adalah_tgr) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Setoran hanya berlaku untuk rekomendasi TGR.'
+      });
+    }
+
+    const keirbanan = rekomendasi.temuan.dokumen.penugasan.pkpt.keirbanan;
+    if (user.keirbanan !== 'ALL' && user.keirbanan !== keirbanan) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: 'Akses ditolak.'
+      });
+    }
+
+    const setoran = await SetoranTgr.create({
+      rekomendasi_id: rekomendasi.id,
+      jumlah_setoran,
+      tanggal_setor,
+      keterangan: keterangan || null,
+      file_path: req.file ? req.file.path : null,
+      link_bukti: link_bukti || null,
+      created_by: user.id
+    }, { transaction });
+
+    const nilaiTerlunasiBaru = parseFloat(rekomendasi.nilai_terlunasi || 0) + parseFloat(jumlah_setoran);
+    const statusBaru = nilaiTerlunasiBaru >= parseFloat(rekomendasi.nilai_temuan || 0)
+      ? 'Selesai'
+      : (rekomendasi.status === 'Belum Ditindaklanjuti' ? 'Dalam Proses' : rekomendasi.status);
+
+    await rekomendasi.update({
+      nilai_terlunasi: nilaiTerlunasiBaru,
+      status: statusBaru
+    }, { transaction });
+
+    await transaction.commit();
+
+    await writeLog(
+      user.id,
+      user.nama,
+      'Tambah Setoran TGR',
+      'Rekomendasi',
+      `${rekomendasi.ditujukan_kepada} — Setoran Rp ${parseFloat(jumlah_setoran).toLocaleString('id-ID')}`,
+      keirbanan
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Setoran TGR berhasil dicatat.',
+      data: {
+        setoran,
+        nilai_terlunasi: nilaiTerlunasiBaru,
+        sisa: parseFloat(rekomendasi.nilai_temuan || 0) - nilaiTerlunasiBaru,
+        status: statusBaru
+      }
+    });
+  } catch (e) {
+    await transaction.rollback();
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
+// GET RIWAYAT SETORAN TGR
+// ═══════════════════════════════════════════
+const getSetoranByRekomendasi = async (req, res) => {
+  try {
+    const setorans = await SetoranTgr.findAll({
+      where: { rekomendasi_id: req.params.id },
+      include: [{ model: User, as: 'creator', attributes: ['id', 'nama'] }],
+      order: [['tanggal_setor', 'DESC']]
+    });
+    return res.json({ success: true, data: setorans });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
 module.exports = {
   getRekomendasiByTemuan,
   createRekomendasi,
   updateRekomendasi,
-  deleteRekomendasi
+  deleteRekomendasi,
+  tambahSetoranTgr,
+  getSetoranByRekomendasi
 };
