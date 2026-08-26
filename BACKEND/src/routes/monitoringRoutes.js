@@ -5,7 +5,8 @@ const {
   getAlertSPT,
   getAlertTL,
   getProgressKeirbanan,
-  getLog
+  getLog,
+  getMonitoringTable
 } = require('../controllers/monitoringController');
 const { authenticate, isAdmin } = require('../middleware/auth');
 
@@ -13,6 +14,9 @@ router.use(authenticate);
 
 // Dashboard — semua role
 router.get('/dashboard', getDashboard);
+
+// Tabel monitoring — semua role (tahun berjalan)
+router.get('/table', getMonitoringTable);
 
 // Alert — semua role
 router.get('/alert/spt', getAlertSPT);

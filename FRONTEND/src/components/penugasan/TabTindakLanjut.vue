@@ -247,30 +247,16 @@ const loadTL = async () => {
 }
 
 const handleSubmit = async (data) => {
-  submitting.value = true
-
-  // Upload bukti dulu kalau ada
-  const buktiIds = []
-  for (const bukti of data.buktis || []) {
-    if (!bukti.judul_bukti) continue
-    try {
-      const res = await tlStore.uploadBukti({
-        judul_bukti: bukti.judul_bukti,
-        file: bukti.file,
-        link_bukti: bukti.link_bukti,
-        keterangan: bukti.keterangan || ''
-      })
-      if (res.success) buktiIds.push(res.data.id)
-    } catch { /* skip */ }
-  }
+ submitting.value = true
 
   const result = await tlStore.create({
     rekomendasi_id: data.rekomendasi_id,
     uraian_tl: data.uraian_tl,
     tanggal_tl: data.tanggal_tl,
-    status_penerimaan: data.status_penerimaan,
-    bukti_ids: buktiIds
+    status_penerimaan: data.status_penerimaan
   })
+
+  submitting.value = false
 
   submitting.value = false
   if (result.success) {

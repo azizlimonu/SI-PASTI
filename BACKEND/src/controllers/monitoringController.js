@@ -520,6 +520,79 @@ const getProgressKeirbanan = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════
+// TABEL MONITORING (per penugasan, tahun berjalan)
+// ═══════════════════════════════════════════
+const getMonitoringTable = async (req, res) => {
+  try {
+    const user = req.user;
+    const tahun = req.query.tahun || new Date().getFullYear();
+
+    const pkptWhere = { ...getKeirbanFilter(user), tahun };
+
+    const penugasanList = await Penugasan.findAll({
+      include: [
+        {
+          model: Pkpt, as: 'pkpt',
+          where: pkptWhere,
+          attributes: ['id', 'tahun', 'keirbanan']
+        },
+        {
+          model: DokumenPenugasan, as: 'dokumens',
+          where: { jenis_dokumen: 'LHP' },
+          required: false,
+          include: [{
+            model: Temuan, as: 'temuans',
+            include: [{
+              model: Rekomendasi, as: 'rekomendasis',
+              include: [{
+                model: TindakLanjut, as: 'tindakLanjuts',
+                include: [{
+                  model: BuktiTL, as: 'buktis',
+                  through: { attributes: [] }
+                }]
+              }]
+            }]
+          }]
+        }
+      ],
+      order: [['nama_penugasan', 'ASC']]
+    });
+
+    const data = penugasanList.map(p => {
+      const temuans = (p.dokumens || []).flatMap(d => d.temuans || []);
+      const rekomendasis = temuans.flatMap(t => t.rekomendasis || []);
+      const tindakLanjuts = rekomendasis.flatMap(r => r.tindakLanjuts || []);
+      const buktis = tindakLanjuts.flatMap(tl => tl.buktis || []);
+
+      const statusTL = {
+        selesai: rekomendasis.filter(r => r.status === 'Selesai').length,
+        dalam_proses: rekomendasis.filter(r => r.status === 'Dalam Proses').length,
+        belum: rekomendasis.filter(r => r.status === 'Belum Ditindaklanjuti').length
+      };
+
+      return {
+        penugasan_id: p.id,
+        nama_penugasan: p.nama_penugasan,
+        keirbanan: p.pkpt.keirbanan,
+        tahun_pkpt: p.pkpt.tahun,
+        jumlah_temuan: temuans.length,
+        jumlah_rekomendasi: rekomendasis.length,
+        status_tindak_lanjut: statusTL,
+        jumlah_tindak_lanjut: tindakLanjuts.length,
+        jumlah_bukti_tl: new Set(buktis.map(b => b.id)).size
+      };
+    });
+
+    return res.json({ success: true, tahun: parseInt(tahun), data });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
 // LOG AKTIVITAS
 // ═══════════════════════════════════════════
 const getLog = async (req, res) => {
@@ -572,5 +645,6 @@ module.exports = {
   getAlertSPT,
   getAlertTL,
   getProgressKeirbanan,
-  getLog
+  getLog,
+  getMonitoringTable
 };

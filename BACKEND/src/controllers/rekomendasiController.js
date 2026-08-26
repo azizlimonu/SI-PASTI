@@ -64,7 +64,7 @@ const getRekomendasiByTemuan = async (req, res) => {
 const createRekomendasi = async (req, res) => {
   try {
     const {
-      temuan_id, uraian_rekomendasi, pihak_id,
+      temuan_id, uraian_rekomendasi, pihak_id, pihak,
       ditujukan_kepada, adalah_tgr, nilai_temuan,
       batas_waktu_tl
     } = req.body;

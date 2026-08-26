@@ -1,6 +1,7 @@
 const {
   Temuan, Rekomendasi, DokumenPenugasan,
-  Penugasan, Pkpt, Pihak, User, sequelize
+  Penugasan, Pkpt, Pihak, User, sequelize,
+  TindakLanjut, BuktiTL
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 
@@ -21,7 +22,14 @@ const getTemuanByDokumen = async (req, res) => {
         {
           model: Rekomendasi,
           as: 'rekomendasis',
-          include: [{ model: Pihak, as: 'pihak' }]
+          include: [
+            { model: Pihak, as: 'pihak' },
+            {
+              model: TindakLanjut,
+              as: 'tindakLanjuts',
+              include: [{ model: BuktiTL, as: 'buktis', through: { attributes: [] } }]
+            }
+          ]
         }
       ],
       order: [['created_at', 'ASC']],
@@ -30,9 +38,20 @@ const getTemuanByDokumen = async (req, res) => {
       distinct: true
     });
 
+    const data = rows.map(t => {
+      const tj = t.toJSON();
+      tj.rekomendasis = (tj.rekomendasis || []).map(r => {
+        r.ada_bukti_tl = (r.tindakLanjuts || []).some(
+          tl => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
+        );
+        return r;
+      });
+      return tj;
+    });
+
     return res.json({
       success: true,
-      data: rows,
+      data,
       pagination: {
         total: count,
         page: parseInt(page),

@@ -55,7 +55,7 @@ const getTLByRekomendasi = async (req, res) => {
 // ═══════════════════════════════════════════
 const getAllTL = async (req, res) => {
   try {
-    const { status, keirbanan, search } = req.query;
+    const { status, status_penerimaan, keirbanan, search } = req.query;
     const user = req.user;
 
     // Build filter keirbanan lewat relasi
@@ -69,7 +69,20 @@ const getAllTL = async (req, res) => {
     const rekWhere = {};
     if (status) rekWhere.status = status;
 
+    const tlWhere = {};
+    if (status_penerimaan) tlWhere.status_penerimaan = status_penerimaan;
+    if (search) {
+      tlWhere[Op.or] = [
+        { uraian_tl: { [Op.like]: `%${search}%` } },
+        { '$rekomendasi.ditujukan_kepada$': { [Op.like]: `%${search}%` } },
+        { '$rekomendasi.temuan.judul_temuan$': { [Op.like]: `%${search}%` } },
+        { '$rekomendasi.temuan.dokumen.penugasan.nama_penugasan$': { [Op.like]: `%${search}%` } }
+      ];
+    }
+
     const tl = await TindakLanjut.findAll({
+      where: tlWhere,
+      subQuery: false,
       include: [
         { model: User, as: 'creator', attributes: ['id', 'nama'] },
         {

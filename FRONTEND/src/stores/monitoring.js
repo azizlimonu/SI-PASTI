@@ -11,6 +11,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
   const alertTl = ref([])
   const progress = ref([])
   const log = ref([])
+  const table = ref([])
   const logPagination = ref({ total: 0, page: 1, limit: 25, total_pages: 1 })
   const loading = ref(false)
   const error = ref(null)
@@ -108,6 +109,23 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     }
   }
 
+  const fetchTable = async (params = {}) => {
+    loading.value = true
+    try {
+      const res = await monitoringService.getTable({
+        ...baseParams(),
+        ...params
+      })
+      table.value = res.data.data
+      return res.data.data
+    } catch (e) {
+      table.value = []
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   const setLogPage = (page) => {
     logPagination.value.page = page
     fetchLog()
@@ -119,13 +137,14 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     alertTl.value = []
     progress.value = []
     log.value = []
+    table.value = []
     error.value = null
   }
 
   return {
     dashboard, alertSpt, alertTl, progress,
-    log, logPagination, loading, error,
+    log, logPagination, table, loading, error,
     fetchDashboard, fetchAlertSpt, fetchAlertTl,
-    fetchProgress, fetchLog, setLogPage, reset
+    fetchProgress, fetchLog, fetchTable, setLogPage, reset
   }
 })

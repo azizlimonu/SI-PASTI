@@ -6,7 +6,8 @@ const {
   createPihak,
   updatePihak,
   deletePihak,
-  cekSKTJM
+  cekSKTJM,
+  getRiwayatTGR
 } = require('../controllers/pihakController');
 const { authenticate, isAdmin } = require('../middleware/auth');
 
@@ -14,6 +15,7 @@ router.use(authenticate);
 
 // SKTJM — semua role bisa cek
 router.get('/sktjm', cekSKTJM);
+router.get('/riwayat-tgr', getRiwayatTGR);
 
 // Read — semua role
 router.get('/', getAllPihak);

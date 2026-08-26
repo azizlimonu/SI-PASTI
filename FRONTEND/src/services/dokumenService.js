@@ -65,5 +65,20 @@ export const dokumenService = {
     api.put(`/dokumen/rekomendasi/${id}`, data),
 
   deleteRekomendasi: (id) =>
-    api.delete(`/dokumen/rekomendasi/${id}`)
+    api.delete(`/dokumen/rekomendasi/${id}`),
+
+  // Setoran TGR
+  tambahSetoranTgr: (rekomendasiId, data) => {
+    const formData = new FormData()
+    Object.keys(data).forEach(key => {
+      if (key === 'file' && data[key]) {
+        formData.append('file', data[key])
+      } else if (data[key] !== null && data[key] !== undefined) {
+        formData.append(key, data[key])
+      }
+    })
+    return api.post(`/dokumen/rekomendasi/${rekomendasiId}/setoran`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
 }

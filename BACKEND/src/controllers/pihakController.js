@@ -38,7 +38,7 @@ const getAllPihak = async (req, res) => {
       distinct: true
     });
 
-    return res.json({ success: true, data: pihak }); return res.json({
+    return res.json({
       success: true,
       data: rows,
       pagination: {
@@ -48,6 +48,72 @@ const getAllPihak = async (req, res) => {
         total_pages: Math.ceil(count / parseInt(limit))
       }
     })
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
+// GET PIHAK DENGAN RIWAYAT TGR (untuk halaman SKTJM)
+// ═══════════════════════════════════════════
+const getRiwayatTGR = async (req, res) => {
+  try {
+    const pihakList = await Pihak.findAll({
+      include: [{
+        model: Rekomendasi,
+        as: 'rekomendasis',
+        where: { adalah_tgr: true },
+        required: true,
+        include: [
+          {
+            model: Temuan,
+            as: 'temuan',
+            include: [{
+              model: DokumenPenugasan,
+              as: 'dokumen',
+              attributes: ['id', 'judul_dokumen', 'jenis_dokumen'],
+              include: [{
+                model: Penugasan,
+                as: 'penugasan',
+                attributes: ['id', 'nama_penugasan'],
+                include: [{
+                  model: Pkpt,
+                  as: 'pkpt',
+                  attributes: ['id', 'tahun', 'keirbanan']
+                }]
+              }]
+            }]
+          },
+          {
+            model: TindakLanjut,
+            as: 'tindakLanjuts',
+            include: [{
+              model: BuktiTL,
+              as: 'buktis',
+              through: { attributes: [] }
+            }]
+          }
+        ]
+      }],
+      order: [['nama', 'ASC']]
+    });
+
+    const data = pihakList.map(p => {
+      const pj = p.toJSON();
+      pj.total_nilai_tgr = pj.rekomendasis.reduce(
+        (sum, r) => sum + parseFloat(r.nilai_temuan || 0), 0
+      );
+      pj.total_terlunasi = pj.rekomendasis.reduce(
+        (sum, r) => sum + parseFloat(r.nilai_terlunasi || 0), 0
+      );
+      pj.sisa_tgr = pj.total_nilai_tgr - pj.total_terlunasi;
+      return pj;
+    });
+
+    return res.json({ success: true, data });
   } catch (e) {
     return res.status(500).json({
       success: false,
@@ -493,5 +559,6 @@ module.exports = {
   createPihak,
   updatePihak,
   deletePihak,
-  cekSKTJM
+  cekSKTJM,
+  getRiwayatTGR
 };

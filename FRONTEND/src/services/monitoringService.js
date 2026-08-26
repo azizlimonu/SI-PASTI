@@ -14,5 +14,8 @@ export const monitoringService = {
     api.get('/monitoring/progress', { params }),
 
   getLog: (params = {}) =>
-    api.get('/monitoring/log', { params })
+    api.get('/monitoring/log', { params }),
+
+  getTable: (params = {}) =>
+    api.get('/monitoring/table', { params })
 }

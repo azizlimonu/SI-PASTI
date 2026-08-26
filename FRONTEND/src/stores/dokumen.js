@@ -143,6 +143,20 @@ export const useDokumenStore = defineStore('dokumen', () => {
     }
   }
 
+  const tambahSetoranTgr = async (rekomendasiId, data) => {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await dokumenService.tambahSetoranTgr(rekomendasiId, data)
+      return { success: true, data: res.data.data }
+    } catch (e) {
+      error.value = e.response?.data?.message || 'Gagal mencatat setoran TGR.'
+      return { success: false, message: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
   const setPage = (page) => {
     pagination.value.page = page
   }
@@ -155,7 +169,6 @@ export const useDokumenStore = defineStore('dokumen', () => {
     pagination.value = { total: 0, page: 1, limit: 25, total_pages: 1 }
     error.value = null
   }
-
   return {
     list, current, temuanList, rekomendasiList,
     pagination, loading, error,
@@ -163,6 +176,7 @@ export const useDokumenStore = defineStore('dokumen', () => {
     fetchTemuan, fetchRekomendasi,
     create, update, remove,
     createTemuanBatch, createRekomendasi,
+    tambahSetoranTgr,
     setPage, reset
   }
 })

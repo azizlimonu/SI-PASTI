@@ -152,15 +152,13 @@
       </div>
     </div>
 
-    <!-- Modal Form Batch Temuan -->
+    <!-- Modal Form Temuan -->
     <AppModal
       v-model="showForm"
-      title="Tambah Temuan & Rekomendasi"
-      width="48rem"
+      title="Tambah Temuan"
       :close-on-backdrop="false"
     >
-      <LhpForm
-        :dokumen-id="selectedLhpId"
+      <TemuanForm
         :loading="submitting"
         @submit="handleSubmit"
         @cancel="showForm = false"
@@ -226,7 +224,7 @@ import { useDokumenStore } from '@/stores/dokumen'
 import { dokumenService } from '@/services/dokumenService'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
-import LhpForm from '@/components/lhp/LhpForm.vue'
+import TemuanForm from '@/components/lhp/TemuanForm.vue'
 
 const props = defineProps({
   penugasanId: { type: Number, required: true },
@@ -262,7 +260,10 @@ const loadTemuan = async () => {
 
 const handleSubmit = async (data) => {
   submitting.value = true
-  const result = await dokumen.createTemuanBatch(data)
+  const result = await dokumen.createTemuanBatch({
+    dokumen_penugasan_id: selectedLhpId.value,
+    temuan: [data]
+  })
   submitting.value = false
   if (result.success) {
     toast.success('Temuan berhasil disimpan.')

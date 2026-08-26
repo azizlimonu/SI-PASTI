@@ -17,5 +17,8 @@ export const pihakService = {
     api.delete(`/pihak/${id}`),
 
   cekSktjm: (params = {}) =>
-    api.get('/pihak/sktjm', { params })
+    api.get('/pihak/sktjm', { params }),
+
+  getRiwayatTGR: () =>
+    api.get('/pihak/riwayat-tgr')
 }

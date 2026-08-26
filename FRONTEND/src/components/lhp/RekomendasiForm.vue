@@ -49,14 +49,79 @@
       </div>
     </div>
 
-    <div>
-      <label class="input-label">Pihak (opsional)</label>
-      <select v-model="form.pihak_id" class="select-field">
-        <option value="">Pilih dari master pihak</option>
-        <option v-for="p in pihakList" :key="p.id" :value="p.id">
-          {{ p.nama }} — {{ p.jenis_pihak }}
-        </option>
-      </select>
+    <div
+      style="padding:0.875rem; border-radius:0.625rem; border:1px solid var(--border-color); display:flex; flex-direction:column; gap:0.75rem;"
+    >
+      <p
+        style="font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin:0;"
+      >
+        Pihak Terkait
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div>
+          <label class="input-label"
+            >Nama Pihak <span style="color:#f87171;">*</span></label
+          >
+          <input
+            v-model="form.pihak.nama"
+            type="text"
+            class="input-field"
+            placeholder="Nama orang/instansi"
+          />
+        </div>
+        <div>
+          <label class="input-label"
+            >Jenis Pihak <span style="color:#f87171;">*</span></label
+          >
+          <select v-model="form.pihak.jenis_pihak" class="select-field">
+            <option value="">Pilih jenis pihak</option>
+            <option value="ASN">ASN</option>
+            <option value="Instansi/OPD">Instansi/OPD</option>
+            <option value="Perusahaan">Perusahaan</option>
+            <option value="Perorangan">Perorangan</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+      </div>
+
+      <div
+        v-if="form.pihak.jenis_pihak === 'Lainnya'"
+        style="margin-top:-0.25rem;"
+      >
+        <label class="input-label">Jenis Pihak Lainnya</label>
+        <input
+          v-model="form.pihak.jenis_pihak_lainnya"
+          type="text"
+          class="input-field"
+          placeholder="Sebutkan jenis pihak"
+        />
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div>
+          <label class="input-label">NIP (jika ASN)</label>
+          <input v-model="form.pihak.nip" type="text" class="input-field" />
+        </div>
+        <div>
+          <label class="input-label">NIK (jika non-ASN)</label>
+          <input v-model="form.pihak.nik" type="text" class="input-field" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div>
+          <label class="input-label">Jabatan</label>
+          <input v-model="form.pihak.jabatan" type="text" class="input-field" />
+        </div>
+        <div>
+          <label class="input-label">Instansi/Perusahaan</label>
+          <input
+            v-model="form.pihak.instansi_perusahaan"
+            type="text"
+            class="input-field"
+          />
+        </div>
+      </div>
     </div>
 
     <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -99,8 +164,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { pihakService } from '@/services/pihakService'
+import { ref } from 'vue'
 
 const props = defineProps({
   temuan: { type: Object, default: null },
@@ -110,7 +174,6 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel'])
 
 const errorMsg = ref('')
-const pihakList = ref([])
 
 const form = ref({
   uraian_rekomendasi: '',
@@ -118,7 +181,15 @@ const form = ref({
   adalah_tgr: false,
   nilai_temuan: null,
   batas_waktu_tl: '',
-  pihak_id: ''
+  pihak: {
+    nama: '',
+    jenis_pihak: '',
+    jenis_pihak_lainnya: '',
+    nip: '',
+    nik: '',
+    jabatan: '',
+    instansi_perusahaan: ''
+  }
 })
 
 const handleSubmit = () => {
@@ -126,20 +197,17 @@ const handleSubmit = () => {
   if (!form.value.uraian_rekomendasi.trim()) { errorMsg.value = 'Uraian rekomendasi wajib diisi.'; return }
   if (!form.value.ditujukan_kepada.trim()) { errorMsg.value = 'Ditujukan kepada wajib diisi.'; return }
   if (form.value.adalah_tgr && !form.value.nilai_temuan) { errorMsg.value = 'Nilai temuan TGR wajib diisi.'; return }
+  if (!form.value.pihak.nama.trim()) { errorMsg.value = 'Nama pihak wajib diisi.'; return }
+  if (!form.value.pihak.jenis_pihak) { errorMsg.value = 'Jenis pihak wajib dipilih.'; return }
 
   emit('submit', {
-    ...form.value,
-    pihak_id: form.value.pihak_id || null,
-    nilai_temuan: form.value.adalah_tgr ? form.value.nilai_temuan : null
+    uraian_rekomendasi: form.value.uraian_rekomendasi,
+    ditujukan_kepada: form.value.ditujukan_kepada,
+    adalah_tgr: form.value.adalah_tgr,
+    nilai_temuan: form.value.adalah_tgr ? form.value.nilai_temuan : null,
+    batas_waktu_tl: form.value.batas_waktu_tl || null,
+    pihak_id: null,
+    pihak: { ...form.value.pihak }
   })
 }
-
-onMounted(async () => {
-  try {
-    const res = await pihakService.getAll({ limit: 100 })
-    pihakList.value = res.data.data || []
-  } catch {
-    pihakList.value = []
-  }
-})
 </script>
