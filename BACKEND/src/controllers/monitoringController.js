@@ -174,6 +174,7 @@ const getDashboard = async (req, res) => {
     });
 
     // Format rekomendasi stats
+    // Format rekomendasi stats
     const rekStats = {
       belum: 0, dalam_proses: 0, selesai: 0
     };
@@ -182,6 +183,86 @@ const getDashboard = async (req, res) => {
       if (r.status === 'Dalam Proses') rekStats.dalam_proses = parseInt(r.total);
       if (r.status === 'Selesai') rekStats.selesai = parseInt(r.total);
     });
+    rekStats.total = rekStats.belum + rekStats.dalam_proses + rekStats.selesai;
+
+    // Breakdown rekomendasi Administratif vs TGR
+    const rekomendasiJenisRaw = await Rekomendasi.findAll({
+      attributes: [
+        'adalah_tgr',
+        [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
+      ],
+      include: [{
+        model: Temuan, as: 'temuan',
+        attributes: [],
+        include: [{
+          model: DokumenPenugasan, as: 'dokumen',
+          attributes: [],
+          include: [{
+            model: Penugasan, as: 'penugasan',
+            attributes: [],
+            include: [{
+              model: Pkpt, as: 'pkpt',
+              where: pkptWhere,
+              attributes: []
+            }]
+          }]
+        }]
+      }],
+      group: ['adalah_tgr'],
+      raw: true
+    });
+
+    const rekJenis = { administratif: 0, tgr: 0 };
+    rekomendasiJenisRaw.forEach(r => {
+      const jml = parseInt(r.total);
+      if (r.adalah_tgr) rekJenis.tgr = jml; else rekJenis.administratif = jml;
+    });
+
+    // Progress Bukti TL (persentase rekomendasi yang sudah ada bukti TL diterima)
+    const rekomendasiBuktiRaw = await Rekomendasi.findAll({
+      attributes: ['id'],
+      include: [
+        {
+          model: Temuan, as: 'temuan',
+          attributes: [],
+          include: [{
+            model: DokumenPenugasan, as: 'dokumen',
+            attributes: [],
+            include: [{
+              model: Penugasan, as: 'penugasan',
+              attributes: [],
+              include: [{
+                model: Pkpt, as: 'pkpt',
+                where: pkptWhere,
+                attributes: []
+              }]
+            }]
+          }]
+        },
+        {
+          model: TindakLanjut, as: 'tindakLanjuts',
+          attributes: ['id', 'status_penerimaan'],
+          include: [{
+            model: BuktiTL, as: 'buktis',
+            attributes: ['id'],
+            through: { attributes: [] }
+          }]
+        }
+      ]
+    });
+
+    const totalRekBukti = rekomendasiBuktiRaw.length;
+    const rekAdaBukti = rekomendasiBuktiRaw.filter(r =>
+      (r.tindakLanjuts || []).some(
+        tl => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
+      )
+    ).length;
+
+    const buktiTlProgress = {
+      total: totalRekBukti,
+      ada_bukti: rekAdaBukti,
+      persen: totalRekBukti > 0 ? Math.round((rekAdaBukti / totalRekBukti) * 100) : 0
+    };
 
     return res.json({
       success: true,
@@ -200,6 +281,8 @@ const getDashboard = async (req, res) => {
         dokumen: { total: totalDokumen },
         temuan: { total: totalTemuan },
         rekomendasi: rekStats,
+        rekomendasi_jenis: rekJenis,
+        bukti_tl_progress: buktiTlProgress,
         tgr: {
           total_nilai: parseFloat(tgrStats?.total_temuan || 0),
           total_terlunasi: parseFloat(tgrStats?.total_terlunasi || 0),
@@ -298,60 +381,81 @@ const getAlertTL = async (req, res) => {
     const user = req.user;
     const pkptWhere = { ...getKeirbanFilter(user) };
     const hariIni = new Date();
+    const tigaHariLagi = new Date();
+    tigaHariLagi.setDate(tigaHariLagi.getDate() + 3);
 
+    const includeNested = [
+      {
+        model: Temuan, as: 'temuan',
+        include: [{
+          model: DokumenPenugasan, as: 'dokumen',
+          attributes: ['id', 'judul_dokumen'],
+          include: [{
+            model: Penugasan, as: 'penugasan',
+            attributes: ['id', 'nama_penugasan'],
+            include: [{
+              model: Pkpt, as: 'pkpt',
+              where: pkptWhere,
+              attributes: ['id', 'tahun', 'keirbanan']
+            }]
+          }]
+        }]
+      }
+    ];
+
+    const mapItem = (r) => ({
+      rekomendasi_id: r.id,
+      uraian_rekomendasi: r.uraian_rekomendasi,
+      ditujukan_kepada: r.ditujukan_kepada,
+      adalah_tgr: r.adalah_tgr,
+      nilai_temuan: r.nilai_temuan,
+      nilai_terlunasi: r.nilai_terlunasi,
+      sisa_tgr: r.adalah_tgr
+        ? parseFloat(r.nilai_temuan || 0) - parseFloat(r.nilai_terlunasi || 0)
+        : null,
+      batas_waktu_tl: r.batas_waktu_tl,
+      status: r.status,
+      penugasan: r.temuan.dokumen.penugasan.nama_penugasan,
+      keirbanan: r.temuan.dokumen.penugasan.pkpt.keirbanan,
+      tahun_pkpt: r.temuan.dokumen.penugasan.pkpt.tahun
+    });
+
+    // Sudah terlambat
     const rekomendasiTerlambat = await Rekomendasi.findAll({
       where: {
         status: { [Op.ne]: 'Selesai' },
         batas_waktu_tl: { [Op.lt]: hariIni }
       },
-      include: [
-        {
-          model: Temuan, as: 'temuan',
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: ['id', 'judul_dokumen'],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: ['id', 'nama_penugasan'],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: pkptWhere,
-                attributes: ['id', 'tahun', 'keirbanan']
-              }]
-            }]
-          }]
-        }
-      ],
+      include: includeNested,
       order: [['batas_waktu_tl', 'ASC']]
     });
 
-    const result = rekomendasiTerlambat.map(r => {
-      const hariTerlambat = Math.floor(
-        (hariIni - new Date(r.batas_waktu_tl)) / (1000 * 60 * 60 * 24)
-      );
-      return {
-        rekomendasi_id: r.id,
-        uraian_rekomendasi: r.uraian_rekomendasi,
-        ditujukan_kepada: r.ditujukan_kepada,
-        adalah_tgr: r.adalah_tgr,
-        nilai_temuan: r.nilai_temuan,
-        nilai_terlunasi: r.nilai_terlunasi,
-        sisa_tgr: r.adalah_tgr
-          ? parseFloat(r.nilai_temuan || 0) - parseFloat(r.nilai_terlunasi || 0)
-          : null,
-        batas_waktu_tl: r.batas_waktu_tl,
-        hari_terlambat: hariTerlambat,
-        status: r.status,
-        penugasan: r.temuan.dokumen.penugasan.nama_penugasan,
-        keirbanan: r.temuan.dokumen.penugasan.pkpt.keirbanan,
-        tahun_pkpt: r.temuan.dokumen.penugasan.pkpt.tahun
-      };
+    const terlambat = rekomendasiTerlambat.map(r => ({
+      ...mapItem(r),
+      hari_terlambat: Math.floor((hariIni - new Date(r.batas_waktu_tl)) / (1000 * 60 * 60 * 24))
+    }));
+
+    // Akan jatuh tempo (H-3)
+    const rekomendasiAkanJatuhTempo = await Rekomendasi.findAll({
+      where: {
+        status: { [Op.ne]: 'Selesai' },
+        batas_waktu_tl: { [Op.between]: [hariIni, tigaHariLagi] }
+      },
+      include: includeNested,
+      order: [['batas_waktu_tl', 'ASC']]
     });
+
+    const akanJatuhTempo = rekomendasiAkanJatuhTempo.map(r => ({
+      ...mapItem(r),
+      hari_tersisa: Math.ceil((new Date(r.batas_waktu_tl) - hariIni) / (1000 * 60 * 60 * 24))
+    }));
 
     return res.json({
       success: true,
-      total: result.length,
-      data: result
+      total: terlambat.length,
+      data: terlambat,
+      total_akan_jatuh_tempo: akanJatuhTempo.length,
+      akan_jatuh_tempo: akanJatuhTempo
     });
   } catch (e) {
     return res.status(500).json({
@@ -575,6 +679,7 @@ const getMonitoringTable = async (req, res) => {
         nama_penugasan: p.nama_penugasan,
         keirbanan: p.pkpt.keirbanan,
         tahun_pkpt: p.pkpt.tahun,
+        ada_lhp: (p.dokumens || []).length > 0,
         jumlah_temuan: temuans.length,
         jumlah_rekomendasi: rekomendasis.length,
         status_tindak_lanjut: statusTL,
@@ -598,9 +703,14 @@ const getMonitoringTable = async (req, res) => {
 const getLog = async (req, res) => {
   try {
     const user = req.user;
-    const { keirbanan, aksi, page = 1, limit = 25 } = req.query;
+    const { keirbanan, aksi, bagian, page = 1, limit = 25 } = req.query;
 
     const where = {};
+    const userInclude = {
+      model: User, as: 'user',
+      attributes: ['id', 'nama', 'nip', 'role'],
+      required: false
+    };
 
     // Filter keirbanan
     if (user.keirbanan !== 'ALL') {
@@ -611,15 +721,26 @@ const getLog = async (req, res) => {
 
     if (aksi) where.aksi = { [Op.like]: `%${aksi}%` };
 
+    // Filter bagian: I/II/III/IV/V (keirbanan), TL (admin_tl), atau PUSAT (superadmin/inspektur)
+    if (bagian) {
+      if (['I', 'II', 'III', 'IV', 'V'].includes(bagian)) {
+        where.keirbanan = bagian;
+      } else if (bagian === 'TL') {
+        where.keirbanan = 'ALL';
+        userInclude.where = { role: 'admin_tl' };
+        userInclude.required = true;
+      } else if (bagian === 'PUSAT') {
+        where.keirbanan = 'ALL';
+        userInclude.where = { role: { [Op.in]: ['superadmin', 'inspektur'] } };
+        userInclude.required = true;
+      }
+    }
+
     const offset = (page - 1) * limit;
 
     const { count, rows } = await LogAktivitas.findAndCountAll({
       where,
-      include: [{
-        model: User, as: 'user',
-        attributes: ['id', 'nama', 'nip'],
-        required: false
-      }],
+      include: [userInclude],
       order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: parseInt(offset)

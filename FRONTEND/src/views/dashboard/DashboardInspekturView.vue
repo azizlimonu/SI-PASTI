@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Dashboard Inspektur</h1>
-        <p class="page-subtitle">Semua Keirbanan — Lintas Tahun</p>
+        <p class="page-subtitle">Semua Keirbanan — Tahun {{ filterTahun }}</p>
       </div>
       <div style="display:flex; align-items:center; gap:0.75rem;">
         <select
@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <!-- Stat Cards -->
+    <!-- Stat Cards (ringkasan awal saja) -->
     <div
       class="stats-grid"
       style="grid-template-columns: repeat(5,1fr); margin-bottom:1.25rem;"
@@ -157,7 +157,6 @@
               :style="{ width: kb.penugasan.progress_persen + '%', backgroundColor: keirbanHex(kb.keirbanan) }"
             ></div>
           </div>
-          <!-- Alert per keirbanan -->
           <div
             v-if="kb.alert.spt_belum_lhp > 0"
             style="margin-top:0.25rem; font-size:0.7rem; color:#f87171;"
@@ -169,7 +168,7 @@
     </div>
 
     <!-- Tabel TGR per Keirbanan -->
-    <div class="glass-card">
+    <div class="glass-card" style="margin-bottom:1.25rem;">
       <div
         style="padding:1rem 1.25rem; border-bottom:1px solid var(--border-color);"
       >
@@ -225,6 +224,22 @@
         </table>
       </div>
     </div>
+
+    <!-- Breakdown Penugasan + Alert -->
+    <div class="widgets-grid-2">
+      <PenugasanBreakdownTable
+        :items="monitoring.table"
+        :loading="loadingTable"
+        :tahun="filterTahun"
+        :show-keirbanan="true"
+      />
+      <AlertPanel
+        :alert-spt="alertSpt"
+        :akan-jatuh-tempo="monitoring.alertTlAkanJatuhTempo"
+        :terlambat="monitoring.alertTl"
+        :show-keirbanan="true"
+      />
+    </div>
   </div>
 </template>
 
@@ -233,13 +248,17 @@ import { ref, onMounted } from 'vue'
 import { useUIStore } from '@/stores/ui'
 import { useMonitoringStore } from '@/stores/monitoring'
 import StatCard from '@/components/dashboard/StatCard.vue'
+import PenugasanBreakdownTable from '@/components/dashboard/PenugasanBreakdownTable.vue'
+import AlertPanel from '@/components/dashboard/AlertPanel.vue'
 import { formatRupiah } from '@/utils/format'
 
 const ui = useUIStore()
 const monitoring = useMonitoringStore()
 
 const loading = ref(false)
+const loadingTable = ref(false)
 const dashboard = ref(null)
+const alertSpt = ref([])
 const progressData = ref([])
 const filterTahun = ref(new Date().getFullYear())
 
@@ -256,13 +275,19 @@ const tgrPersen = (kb) => {
 
 const loadData = async () => {
   loading.value = true
-  const [dashRes, progRes] = await Promise.all([
+  loadingTable.value = true
+  const [dashRes, progRes, sptRes] = await Promise.all([
     monitoring.fetchDashboard({ tahun: filterTahun.value }),
-    monitoring.fetchProgress({ tahun: filterTahun.value })
+    monitoring.fetchProgress({ tahun: filterTahun.value }),
+    monitoring.fetchAlertSpt(),
+    monitoring.fetchAlertTl(),
+    monitoring.fetchTable({ tahun: filterTahun.value })
   ])
   dashboard.value = dashRes
   progressData.value = progRes || []
+  alertSpt.value = sptRes || []
   loading.value = false
+  loadingTable.value = false
 }
 
 onMounted(loadData)
@@ -273,6 +298,7 @@ onMounted(loadData)
 .chart-loading { display:flex; align-items:center; justify-content:center; padding:2rem; }
 .progress-track { height:8px; background:var(--bg-hover); border-radius:9999px; overflow:hidden; }
 .progress-bar-dynamic { height:100%; border-radius:9999px; transition:width 0.5s ease; }
-@media(max-width:1024px) { .stats-grid { grid-template-columns:repeat(3,1fr) !important; } }
+.widgets-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; align-items: start; }
+@media(max-width:1024px) { .stats-grid { grid-template-columns:repeat(3,1fr) !important; } .widgets-grid-2 { grid-template-columns: 1fr; } }
 @media(max-width:640px) { .stats-grid { grid-template-columns:repeat(2,1fr) !important; } }
 </style>

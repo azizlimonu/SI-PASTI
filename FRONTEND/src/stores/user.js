@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { userService } from '@/services/userService'
-import { authService } from '@/services/authService'
 
 export const useUserStore = defineStore('user', () => {
   const list = ref([])
@@ -31,9 +30,9 @@ export const useUserStore = defineStore('user', () => {
     loading.value = true
     error.value = null
     try {
-      const res = await authService.createUser(data)
+      const res = await userService.create(data)
       await fetchAll()
-      return { success: true, data: res.data.user, message: res.data.message }
+      return { success: true, data: res.data.data, message: res.data.message }
     } catch (e) {
       error.value = e.response?.data?.message || 'Gagal membuat user.'
       return { success: false, message: error.value }

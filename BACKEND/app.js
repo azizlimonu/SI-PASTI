@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 3000;
 sequelize.authenticate()
   .then(() => {
     console.log('✅ Koneksi database berhasil.');
-    return sequelize.sync({ alter: true });
+    return sequelize.sync();
   })
   .then(() => {
     console.log('✅ Tabel database berhasil disinkronkan.');

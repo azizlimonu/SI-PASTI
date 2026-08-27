@@ -3,12 +3,12 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Dashboard Tindak Lanjut</h1>
-        <p class="page-subtitle">Semua Keirbanan — Lintas Tahun</p>
+        <p class="page-subtitle">Semua Keirbanan — Tahun {{ ui.tahunAktif }}</p>
       </div>
       <span class="badge badge-yellow">Admin TL</span>
     </div>
 
-    <!-- Stat Cards -->
+    <!-- Stat Cards (ringkasan awal saja) -->
     <div class="stats-grid">
       <StatCard
         label="Total Rekomendasi"
@@ -70,8 +70,8 @@
       </StatCard>
     </div>
 
-    <!-- TGR + Chart -->
-    <div class="charts-grid">
+    <!-- Widget Row 1: TGR + Jenis Rekomendasi + Status donut -->
+    <div class="widgets-grid-3">
       <!-- Nilai TGR -->
       <div class="glass-card" style="padding:1.25rem;">
         <h3 class="card-title">Nilai TGR Keseluruhan</h3>
@@ -115,24 +115,85 @@
             </div>
           </div>
           <div
-            style="display:flex; justify-content:space-between; padding:0.75rem; border-radius:0.75rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);"
+            style="display:flex; justify-content:space-between; padding:0.625rem; border-radius:0.625rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);"
           >
-            <span style="font-size:0.8rem; color:#f87171; font-weight:500;"
+            <span style="font-size:0.78rem; color:#f87171; font-weight:500;"
               >Sisa TGR</span
             >
             <span
-              style="font-size:0.875rem; font-weight:700; color:#f87171;"
+              style="font-size:0.82rem; font-weight:700; color:#f87171;"
               >{{ formatRupiah(dashboard?.tgr?.sisa) }}</span
             >
           </div>
         </div>
       </div>
 
-      <!-- Donut Chart -->
+      <!-- Jenis Rekomendasi + Bukti TL Progress -->
+      <div class="glass-card" style="padding:1.25rem;">
+        <h3 class="card-title">Rekomendasi Administratif vs TGR</h3>
+        <div
+          style="display:flex; flex-direction:column; gap:0.875rem; margin-top:0.5rem;"
+        >
+          <div>
+            <div
+              style="display:flex; justify-content:space-between; margin-bottom:0.375rem;"
+            >
+              <span style="font-size:0.75rem; color:var(--text-muted);"
+                >Administratif</span
+              >
+              <span
+                style="font-size:0.75rem; font-weight:600; color:var(--text-primary);"
+                >{{ dashboard?.rekomendasi_jenis?.administratif ?? 0 }}</span
+              >
+            </div>
+            <div class="progress-track">
+              <div
+                class="progress-bar-dynamic"
+                :style="{ width: jenisPersen.administratif + '%', backgroundColor:'#3b82f6' }"
+              ></div>
+            </div>
+          </div>
+          <div>
+            <div
+              style="display:flex; justify-content:space-between; margin-bottom:0.375rem;"
+            >
+              <span style="font-size:0.75rem; color:var(--text-muted);"
+                >TGR</span
+              >
+              <span
+                style="font-size:0.75rem; font-weight:600; color:var(--text-primary);"
+                >{{ dashboard?.rekomendasi_jenis?.tgr ?? 0 }}</span
+              >
+            </div>
+            <div class="progress-track">
+              <div
+                class="progress-bar-dynamic"
+                :style="{ width: jenisPersen.tgr + '%', backgroundColor:'#a855f7' }"
+              ></div>
+            </div>
+          </div>
+          <div style="text-align:center; padding-top:0.25rem;">
+            <span style="font-size:0.72rem; color:var(--text-muted);"
+              >Progress Bukti TL</span
+            >
+            <p
+              style="font-size:1.5rem; font-weight:700; color:var(--text-primary); margin:0.25rem 0 0;"
+            >
+              {{ dashboard?.bukti_tl_progress?.persen ?? 0 }}%
+            </p>
+            <span style="font-size:0.7rem; color:var(--text-muted);">
+              {{ dashboard?.bukti_tl_progress?.ada_bukti ?? 0 }} dari
+              {{ dashboard?.bukti_tl_progress?.total ?? 0 }} rekomendasi
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut Status TL -->
       <div class="glass-card" style="padding:1.25rem;">
         <h3 class="card-title">Status Tindak Lanjut</h3>
         <div
-          style="height:180px; display:flex; align-items:center; justify-content:center;"
+          style="height:150px; display:flex; align-items:center; justify-content:center;"
         >
           <Doughnut
             v-if="tlChartData"
@@ -156,12 +217,12 @@
                 :style="{ width:'10px', height:'10px', borderRadius:'50%', backgroundColor: item.color }"
               ></div>
               <span
-                style="font-size:0.78rem; color:var(--text-secondary);"
+                style="font-size:0.76rem; color:var(--text-secondary);"
                 >{{ item.label }}</span
               >
             </div>
             <span
-              style="font-size:0.78rem; font-weight:600; color:var(--text-primary);"
+              style="font-size:0.76rem; font-weight:600; color:var(--text-primary);"
               >{{ item.value }}</span
             >
           </div>
@@ -169,65 +230,20 @@
       </div>
     </div>
 
-    <!-- Rekomendasi Melewati Batas Waktu -->
-    <div class="glass-card" style="margin-top:1.25rem;">
-      <div
-        style="padding:1rem 1.25rem; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;"
-      >
-        <h3 class="card-title" style="margin:0;">
-          ⚠ Rekomendasi Melewati Batas Waktu
-        </h3>
-        <span class="badge badge-red">{{ alertTl.length }} item</span>
-      </div>
-      <div class="table-wrapper" style="border:none; border-radius:0;">
-        <table class="table-base">
-          <thead>
-            <tr>
-              <th>Rekomendasi</th>
-              <th>Ditujukan Kepada</th>
-              <th>Keirbanan</th>
-              <th>Batas Waktu</th>
-              <th>Terlambat</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in alertTl.slice(0,10)" :key="item.rekomendasi_id">
-              <td
-                style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.8rem;"
-              >
-                {{ item.uraian_rekomendasi }}
-              </td>
-              <td style="font-size:0.8rem;">{{ item.ditujukan_kepada }}</td>
-              <td>
-                <span class="badge badge-blue">{{ item.keirbanan }}</span>
-              </td>
-              <td style="font-size:0.78rem; color:var(--text-muted);">
-                {{ formatDate(item.batas_waktu_tl) }}
-              </td>
-              <td>
-                <span class="badge badge-red"
-                  >{{ item.hari_terlambat }} hari</span
-                >
-              </td>
-              <td>
-                <span
-                  :class="`badge badge-${statusColor(item.status)}`"
-                  >{{ item.status }}</span
-                >
-              </td>
-            </tr>
-            <tr v-if="!alertTl.length">
-              <td
-                colspan="6"
-                style="text-align:center; color:var(--text-muted); padding:2rem;"
-              >
-                Tidak ada rekomendasi terlambat
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- Breakdown Penugasan + Alert -->
+    <div class="widgets-grid-2">
+      <PenugasanBreakdownTable
+        :items="monitoring.table"
+        :loading="loadingTable"
+        :tahun="ui.tahunAktif"
+        :show-keirbanan="true"
+      />
+      <AlertPanel
+        :alert-spt="alertSpt"
+        :akan-jatuh-tempo="monitoring.alertTlAkanJatuhTempo"
+        :terlambat="monitoring.alertTl"
+        :show-keirbanan="true"
+      />
     </div>
   </div>
 </template>
@@ -237,21 +253,36 @@ import { ref, computed, onMounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useUIStore } from '@/stores/ui'
 import StatCard from '@/components/dashboard/StatCard.vue'
-import { formatRupiah, formatDate } from '@/utils/format'
-import { BADGE_COLOR } from '@/utils/constants'
+import PenugasanBreakdownTable from '@/components/dashboard/PenugasanBreakdownTable.vue'
+import AlertPanel from '@/components/dashboard/AlertPanel.vue'
+import { formatRupiah } from '@/utils/format'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 const monitoring = useMonitoringStore()
+const ui = useUIStore()
+
 const loading = ref(false)
+const loadingTable = ref(false)
 const dashboard = ref(null)
-const alertTl = ref([])
+const alertSpt = ref([])
 
 const tgrProgress = computed(() => {
   const total = dashboard.value?.tgr?.total_nilai || 0
   const lun = dashboard.value?.tgr?.total_terlunasi || 0
   return total > 0 ? Math.round((lun / total) * 100) : 0
+})
+
+const jenisPersen = computed(() => {
+  const adm = dashboard.value?.rekomendasi_jenis?.administratif || 0
+  const tgr = dashboard.value?.rekomendasi_jenis?.tgr || 0
+  const total = adm + tgr
+  return {
+    administratif: total > 0 ? Math.round((adm / total) * 100) : 0,
+    tgr: total > 0 ? Math.round((tgr / total) * 100) : 0
+  }
 })
 
 const tlChartData = computed(() => {
@@ -285,17 +316,19 @@ const donutOptions = {
   cutout: '70%'
 }
 
-const statusColor = (status) => BADGE_COLOR[status] || 'gray'
-
 const loadData = async () => {
   loading.value = true
-  const [dashRes, tlRes] = await Promise.all([
+  loadingTable.value = true
+  const [dashRes, sptRes] = await Promise.all([
     monitoring.fetchDashboard(),
-    monitoring.fetchAlertTl()
+    monitoring.fetchAlertSpt(),
+    monitoring.fetchAlertTl(),
+    monitoring.fetchTable({ tahun: ui.tahunAktif })
   ])
   dashboard.value = dashRes
-  alertTl.value = tlRes || []
+  alertSpt.value = sptRes || []
   loading.value = false
+  loadingTable.value = false
 }
 
 onMounted(loadData)
@@ -303,8 +336,12 @@ onMounted(loadData)
 
 <style scoped>
 .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.25rem; }
-.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.widgets-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+.widgets-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; align-items: start; }
 .card-title { font-size:0.875rem; font-weight:600; color:var(--text-primary); margin:0 0 0.75rem; }
 .progress-track { height:6px; background:var(--bg-hover); border-radius:9999px; overflow:hidden; }
-@media(max-width:768px) { .charts-grid { grid-template-columns:1fr; } }
+.progress-bar-dynamic { height:100%; border-radius:9999px; transition:width 0.5s ease; }
+@media(max-width:1200px) { .widgets-grid-3 { grid-template-columns:1fr 1fr; } }
+@media(max-width:1024px) { .widgets-grid-2 { grid-template-columns:1fr; } }
+@media(max-width:768px) { .stats-grid { grid-template-columns:1fr; } }
 </style>

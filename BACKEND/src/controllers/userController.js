@@ -1,7 +1,93 @@
 const { User } = require('../models');
 const { hashPassword } = require('../utils/helpers');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const { Op } = require('sequelize');
+
+// ═══════════════════════════════════════════
+// CREATE USER
+// ═══════════════════════════════════════════
+const createUser = async (req, res) => {
+  try {
+    const { nip, nama, jabatan, role, keirbanan, password } = req.body;
+
+    if (!nip || !nama || !jabatan || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'NIP, nama, jabatan, dan role wajib diisi.'
+      });
+    }
+
+    const validRoles = ['superadmin', 'admin', 'admin_tl', 'irban', 'inspektur'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role tidak valid.'
+      });
+    }
+
+    const existing = await User.findOne({ where: { nip } });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'NIP sudah terdaftar.'
+      });
+    }
+
+    // Validasi & tentukan keirbanan
+    const roleButuhKeirbanan = ['admin', 'irban'];
+    let keirbanValue = keirbanan || null;
+    if (roleButuhKeirbanan.includes(role)) {
+      if (!['I', 'II', 'III', 'IV', 'V'].includes(keirbanValue)) {
+        return res.status(400).json({
+          success: false,
+          message: `Role ${role} wajib memiliki keirbanan yang valid (I/II/III/IV/V).`
+        });
+      }
+    } else {
+      keirbanValue = 'ALL';
+    }
+
+    const hashedPassword = await hashPassword(password || process.env.PASSWORD_DEFAULT);
+
+    const user = await User.create({
+      nip,
+      nama,
+      jabatan,
+      role,
+      keirbanan: keirbanValue,
+      password: hashedPassword,
+      first_login: true
+    });
+
+    await writeLog(
+      req.user.id,
+      req.user.nama,
+      'Tambah User',
+      'User',
+      `${user.nama} (NIP: ${user.nip}) — role: ${user.role}, keirbanan: ${user.keirbanan}`,
+      req.user.keirbanan
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'User berhasil dibuat.',
+      data: {
+        id: user.id,
+        nip: user.nip,
+        nama: user.nama,
+        jabatan: user.jabatan,
+        role: user.role,
+        keirbanan: user.keirbanan,
+        status: user.status
+      }
+    });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
 
 // ═══════════════════════════════════════════
 // GET ALL USERS
@@ -283,6 +369,7 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
   getUsers,
+  createUser,
   getUserById,
   updateUser,
   nonaktifkanUser,

@@ -9,6 +9,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
   const dashboard = ref(null)
   const alertSpt = ref([])
   const alertTl = ref([])
+  const alertTlAkanJatuhTempo = ref([])
   const progress = ref([])
   const log = ref([])
   const table = ref([])
@@ -66,10 +67,12 @@ export const useMonitoringStore = defineStore('monitoring', () => {
         ...params
       })
       alertTl.value = res.data.data
-      return res.data.data
+      alertTlAkanJatuhTempo.value = res.data.akan_jatuh_tempo || []
+      return { terlambat: alertTl.value, akanJatuhTempo: alertTlAkanJatuhTempo.value }
     } catch (e) {
       alertTl.value = []
-      return []
+      alertTlAkanJatuhTempo.value = []
+      return { terlambat: [], akanJatuhTempo: [] }
     } finally {
       loading.value = false
     }
@@ -99,7 +102,12 @@ export const useMonitoringStore = defineStore('monitoring', () => {
         ...params
       })
       log.value = res.data.data
-      logPagination.value = res.data.pagination
+      logPagination.value = {
+        total: res.data.total,
+        page: res.data.page,
+        limit: logPagination.value.limit,
+        total_pages: res.data.total_pages
+      }
       return res.data.data
     } catch (e) {
       log.value = []
@@ -135,6 +143,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
     dashboard.value = null
     alertSpt.value = []
     alertTl.value = []
+    alertTlAkanJatuhTempo.value = []
     progress.value = []
     log.value = []
     table.value = []
@@ -142,7 +151,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
   }
 
   return {
-    dashboard, alertSpt, alertTl, progress,
+    dashboard, alertSpt, alertTl, alertTlAkanJatuhTempo, progress,
     log, logPagination, table, loading, error,
     fetchDashboard, fetchAlertSpt, fetchAlertTl,
     fetchProgress, fetchLog, fetchTable, setLogPage, reset

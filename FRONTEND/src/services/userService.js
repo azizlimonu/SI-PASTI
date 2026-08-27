@@ -4,6 +4,9 @@ export const userService = {
   getAll: (params = {}) =>
     api.get('/users', { params }),
 
+  create: (data) =>
+    api.post('/users', data),
+
   getById: (id) =>
     api.get(`/users/${id}`),
 
