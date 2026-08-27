@@ -4,6 +4,7 @@ const {
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 const fs = require('fs');
+const { sendFileDownload } = require('../utils/downloadFile');
 
 // ═══════════════════════════════════════════
 // GET SEMUA BUKTI (master)
@@ -294,7 +295,53 @@ const deleteBukti = async (req, res) => {
   }
 };
 
+// ═══════════════════════════════════════════
+// DOWNLOAD FILE BUKTI TL
+// ═══════════════════════════════════════════
+const downloadBukti = async (req, res) => {
+  try {
+    const user = req.user;
+    const bukti = await BuktiTL.findByPk(req.params.id, {
+      include: [{
+        model: TindakLanjut, as: 'tindakLanjuts',
+        through: { attributes: [] },
+        include: [{
+          model: Rekomendasi, as: 'rekomendasi',
+          include: [{
+            model: Temuan, as: 'temuan',
+            include: [{
+              model: DokumenPenugasan, as: 'dokumen',
+              include: [{
+                model: Penugasan, as: 'penugasan',
+                include: [{ model: Pkpt, as: 'pkpt' }]
+              }]
+            }]
+          }]
+        }]
+      }]
+    });
+
+    if (!bukti) {
+      return res.status(404).json({ success: false, message: 'Bukti tidak ditemukan.' });
+    }
+
+    if (user.keirbanan !== 'ALL') {
+      const boleh = (bukti.tindakLanjuts || []).some(tl =>
+        tl.rekomendasi?.temuan?.dokumen?.penugasan?.pkpt?.keirbanan === user.keirbanan
+      );
+      if (!boleh) {
+        return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+      }
+    }
+
+    return sendFileDownload(res, bukti.file_path, bukti.judul_bukti);
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Terjadi kesalahan server: ' + e.message });
+  }
+};
+
 module.exports = {
+  downloadBukti,
   getAllBukti,
   uploadBukti,
   attachBukti,

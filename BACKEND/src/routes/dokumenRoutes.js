@@ -8,7 +8,8 @@ const {
   getDokumenById,
   createDokumen,
   updateDokumen,
-  deleteDokumen
+  deleteDokumen,
+  downloadDokumen
 } = require('../controllers/dokumenController');
 
 const {
@@ -24,7 +25,8 @@ const {
   updateRekomendasi,
   deleteRekomendasi,
   tambahSetoranTgr,
-  getSetoranByRekomendasi
+  getSetoranByRekomendasi,
+  downloadSetoran
 } = require('../controllers/rekomendasiController');
 
 const { authenticate, canEditDokumen, canEditTindakLanjut } = require('../middleware/auth');
@@ -113,5 +115,9 @@ router.delete('/rekomendasi/:id', canEditDokumen, deleteRekomendasi);
 // Setoran TGR routes
 router.get('/rekomendasi/:id/setoran', getSetoranByRekomendasi);
 router.post('/rekomendasi/:id/setoran', canEditTindakLanjut, handleUploadSetoran, tambahSetoranTgr);
+router.get('/setoran/:id/download', downloadSetoran);
+
+// Download Dokumen
+router.get('/:id/download', downloadDokumen);
 
 module.exports = router;

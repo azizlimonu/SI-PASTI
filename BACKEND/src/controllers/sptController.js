@@ -2,6 +2,7 @@ const { Spt, Tim, Penugasan, Pkpt, User } = require('../models');
 const writeLog = require('../utils/writeLog');
 const path = require('path');
 const fs = require('fs');
+const { sendFileDownload } = require('../utils/downloadFile');
 
 // ═══════════════════════════════════════════
 // GET SPT BY PENUGASAN
@@ -475,11 +476,37 @@ const hapusTim = async (req, res) => {
   }
 };
 
+// Donwload SPT
+// ═══════════════════════════════════════════
+// DOWNLOAD FILE SPT
+// ═══════════════════════════════════════════
+const downloadSpt = async (req, res) => {
+  try {
+    const user = req.user;
+    const spt = await Spt.findByPk(req.params.id, {
+      include: [{ model: Penugasan, as: 'penugasan', include: [{ model: Pkpt, as: 'pkpt' }] }]
+    });
+
+    if (!spt) {
+      return res.status(404).json({ success: false, message: 'SPT tidak ditemukan.' });
+    }
+
+    if (user.keirbanan !== 'ALL' && spt.penugasan.pkpt.keirbanan !== user.keirbanan) {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    return sendFileDownload(res, spt.file_spt, `SPT-${spt.nomor_spt || spt.id}`);
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Terjadi kesalahan server: ' + e.message });
+  }
+};
+
 module.exports = {
   getSptByPenugasan,
   createSpt,
   updateSpt,
   deleteSpt,
   tambahTim,
-  hapusTim
+  hapusTim,
+  downloadSpt
 };

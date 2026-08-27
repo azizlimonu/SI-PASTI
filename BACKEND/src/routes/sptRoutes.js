@@ -8,7 +8,8 @@ const {
   updateSpt,
   deleteSpt,
   tambahTim,
-  hapusTim
+  hapusTim,
+  downloadSpt
 } = require('../controllers/sptController');
 const { authenticate, canEditDokumen } = require('../middleware/auth');
 
@@ -39,6 +40,7 @@ router.use(authenticate);
 
 // SPT routes
 router.get('/penugasan/:penugasan_id', getSptByPenugasan);
+router.get('/:id/download', downloadSpt);
 router.post('/', canEditDokumen, upload.single('file_spt'), createSpt);
 router.put('/:id', canEditDokumen, upload.single('file_spt'), updateSpt);
 router.delete('/:id', canEditDokumen, deleteSpt);

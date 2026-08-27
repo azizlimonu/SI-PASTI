@@ -8,7 +8,8 @@ const {
   attachBukti,
   detachBukti,
   updateBukti,
-  deleteBukti
+  deleteBukti,
+  downloadBukti
 } = require('../controllers/buktiTLController');
 const { authenticate, canEditTindakLanjut } = require('../middleware/auth');
 
@@ -44,6 +45,7 @@ const handleUpload = (req, res, next) => {
 router.use(authenticate);
 
 router.get('/', getAllBukti);
+router.get('/:id/download', downloadBukti);
 router.post('/', canEditTindakLanjut, handleUpload, uploadBukti);
 router.post('/attach', canEditTindakLanjut, attachBukti);
 router.post('/detach', canEditTindakLanjut, detachBukti);

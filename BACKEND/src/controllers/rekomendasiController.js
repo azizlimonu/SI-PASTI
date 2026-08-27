@@ -4,6 +4,7 @@ const {
   SetoranTgr, sequelize
 } = require('../models');
 const writeLog = require('../utils/writeLog');
+const { sendFileDownload } = require('../utils/downloadFile');
 
 // ═══════════════════════════════════════════
 // GET REKOMENDASI BY TEMUAN
@@ -457,11 +458,49 @@ const getSetoranByRekomendasi = async (req, res) => {
   }
 };
 
+// ═══════════════════════════════════════════
+// DOWNLOAD BUKTI SETORAN TGR
+// ═══════════════════════════════════════════
+const downloadSetoran = async (req, res) => {
+  try {
+    const user = req.user;
+    const setoran = await SetoranTgr.findByPk(req.params.id, {
+      include: [{
+        model: Rekomendasi, as: 'rekomendasi',
+        include: [{
+          model: Temuan, as: 'temuan',
+          include: [{
+            model: DokumenPenugasan, as: 'dokumen',
+            include: [{
+              model: Penugasan, as: 'penugasan',
+              include: [{ model: Pkpt, as: 'pkpt' }]
+            }]
+          }]
+        }]
+      }]
+    });
+
+    if (!setoran) {
+      return res.status(404).json({ success: false, message: 'Setoran tidak ditemukan.' });
+    }
+
+    const keirbanan = setoran.rekomendasi?.temuan?.dokumen?.penugasan?.pkpt?.keirbanan;
+    if (user.keirbanan !== 'ALL' && keirbanan !== user.keirbanan) {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    return sendFileDownload(res, setoran.file_path, `Setoran-TGR-${setoran.id}`);
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Terjadi kesalahan server: ' + e.message });
+  }
+};
+
 module.exports = {
   getRekomendasiByTemuan,
   createRekomendasi,
   updateRekomendasi,
   deleteRekomendasi,
   tambahSetoranTgr,
-  getSetoranByRekomendasi
+  getSetoranByRekomendasi,
+  downloadSetoran
 };

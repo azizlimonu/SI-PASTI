@@ -5,6 +5,7 @@ const {
 const writeLog = require('../utils/writeLog');
 const { Op } = require('sequelize');
 const fs = require('fs');
+const { sendFileDownload } = require('../utils/downloadFile');
 
 // ═══════════════════════════════════════════
 // GET DOKUMEN BY PENUGASAN
@@ -407,10 +408,38 @@ const deleteDokumen = async (req, res) => {
   }
 };
 
+// ═══════════════════════════════════════════
+// DOWNLOAD FILE DOKUMEN
+// ═══════════════════════════════════════════
+const downloadDokumen = async (req, res) => {
+  try {
+    const user = req.user;
+    const dokumen = await DokumenPenugasan.findByPk(req.params.id, {
+      include: [{
+        model: Penugasan, as: 'penugasan',
+        include: [{ model: Pkpt, as: 'pkpt' }]
+      }]
+    });
+
+    if (!dokumen) {
+      return res.status(404).json({ success: false, message: 'Dokumen tidak ditemukan.' });
+    }
+
+    if (user.keirbanan !== 'ALL' && dokumen.penugasan.pkpt.keirbanan !== user.keirbanan) {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    return sendFileDownload(res, dokumen.file_path, dokumen.judul_dokumen);
+  } catch (e) {
+    return res.status(500).json({ success: false, message: 'Terjadi kesalahan server: ' + e.message });
+  }
+};
+
 module.exports = {
   getDokumenByPenugasan,
   getDokumenById,
   createDokumen,
   updateDokumen,
-  deleteDokumen
+  deleteDokumen,
+  downloadDokumen
 };
