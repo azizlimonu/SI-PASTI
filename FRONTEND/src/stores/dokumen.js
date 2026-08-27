@@ -157,6 +157,15 @@ export const useDokumenStore = defineStore('dokumen', () => {
     }
   }
 
+  const fetchSetoranByRekomendasi = async (rekomendasiId) => {
+    try {
+      const res = await dokumenService.getSetoranByRekomendasi(rekomendasiId)
+      return res.data.data || []
+    } catch {
+      return []
+    }
+  }
+
   const setPage = (page) => {
     pagination.value.page = page
   }
@@ -176,7 +185,7 @@ export const useDokumenStore = defineStore('dokumen', () => {
     fetchTemuan, fetchRekomendasi,
     create, update, remove,
     createTemuanBatch, createRekomendasi,
-    tambahSetoranTgr,
+    tambahSetoranTgr, fetchSetoranByRekomendasi,
     setPage, reset
   }
 })

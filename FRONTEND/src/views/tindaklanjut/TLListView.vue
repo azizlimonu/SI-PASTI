@@ -80,6 +80,18 @@
 
       <div v-else class="table-wrapper" style="border:none; border-radius:0;">
         <table class="table-base">
+          <colgroup>
+            <col style="width:40px;" />
+            <col v-if="auth.hasAllAccess" style="width:110px;" />
+            <col style="width:26%;" />
+            <col style="width:14%;" />
+            <col style="width:14%;" />
+            <col style="width:110px;" />
+            <col style="width:16%;" />
+            <col style="width:95px;" />
+            <col style="width:110px;" />
+            <col style="width:70px;" />
+          </colgroup>
           <thead>
             <tr>
               <th>No</th>
@@ -87,6 +99,7 @@
               <th>Penugasan</th>
               <th>Temuan</th>
               <th>Rekomendasi</th>
+              <th>Status Rekomendasi</th>
               <th>Uraian TL</th>
               <th>Tanggal TL</th>
               <th>Status TL</th>
@@ -114,21 +127,21 @@
                   {{ tl.rekomendasi?.temuan?.dokumen?.penugasan?.nama_penugasan }}
                 </RouterLink>
               </td>
-              <td style="font-size:0.8rem; max-width:180px;">
+              <td style="font-size:0.8rem;">
                 {{ tl.rekomendasi?.temuan?.judul_temuan }}
               </td>
-              <td style="font-size:0.8rem; max-width:180px;">
+              <td style="font-size:0.8rem;">
                 {{ tl.rekomendasi?.ditujukan_kepada }}
+              </td>
+              <td>
                 <span
                   :class="`badge badge-${statusRekomendasiColor(tl.rekomendasi?.status)}`"
-                  style="font-size:0.65rem; margin-left:0.25rem;"
+                  style="font-size:0.68rem;"
                 >
                   {{ tl.rekomendasi?.status }}
                 </span>
               </td>
-              <td style="font-size:0.8rem; max-width:220px;">
-                {{ tl.uraian_tl }}
-              </td>
+              <td style="font-size:0.8rem;">{{ tl.uraian_tl }}</td>
               <td style="font-size:0.8rem; white-space:nowrap;">
                 {{ formatDate(tl.tanggal_tl) }}
               </td>

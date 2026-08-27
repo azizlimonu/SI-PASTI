@@ -61,6 +61,7 @@
               <th>No</th>
               <th v-if="auth.hasAllAccess">Keirbanan</th>
               <th>Nama Penugasan</th>
+              <th>Laporan</th>
               <th>Temuan</th>
               <th>Rekomendasi</th>
               <th>Status Tindak Lanjut</th>
@@ -87,6 +88,14 @@
                 >
                   {{ item.nama_penugasan }}
                 </RouterLink>
+              </td>
+              <td>
+                <span
+                  :class="`badge badge-${item.ada_lhp ? 'green' : 'gray'}`"
+                  style="font-size:0.7rem;"
+                >
+                  {{ item.ada_lhp ? 'Ada' : 'Belum' }}
+                </span>
               </td>
               <td>{{ item.jumlah_temuan }}</td>
               <td>{{ item.jumlah_rekomendasi }}</td>

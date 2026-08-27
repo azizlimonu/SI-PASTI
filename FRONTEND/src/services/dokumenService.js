@@ -80,5 +80,8 @@ export const dokumenService = {
     return api.post(`/dokumen/rekomendasi/${rekomendasiId}/setoran`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-  }
+  },
+
+  getSetoranByRekomendasi: (rekomendasiId) =>
+    api.get(`/dokumen/rekomendasi/${rekomendasiId}/setoran`)
 }

@@ -1,7 +1,7 @@
 const {
   TindakLanjut, Rekomendasi, Temuan,
   DokumenPenugasan, Penugasan, Pkpt,
-  BuktiTL, TindakLanjutBukti, User, sequelize
+  BuktiTL, TindakLanjutBukti, User, sequelize, Pihak
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 const { Op } = require('sequelize');
@@ -24,6 +24,14 @@ const getTLByRekomendasi = async (req, res) => {
           model: BuktiTL,
           as: 'buktis',
           through: { attributes: [] }
+        },
+        {
+          model: Rekomendasi,
+          as: 'rekomendasi',
+          include: [
+            { model: Pihak, as: 'pihak' },
+            { model: Temuan, as: 'temuan', attributes: ['id', 'judul_temuan'] }
+          ]
         }
       ],
       order: [['tanggal_tl', 'DESC']],

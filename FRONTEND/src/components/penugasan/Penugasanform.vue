@@ -31,11 +31,20 @@
       <label class="input-label"
         >Jenis Penugasan <span style="color:#f87171;">*</span></label
       >
+      <select v-model="form.jenis_penugasan" class="select-field">
+        <option value="" disabled>Pilih jenis</option>
+        <option v-for="j in JENIS_KEGIATAN" :key="j" :value="j">{{ j }}</option>
+      </select>
+    </div>
+    <div v-if="form.jenis_penugasan === 'Lainnya'">
+      <label class="input-label"
+        >Keterangan Jenis Penugasan <span style="color:#f87171;">*</span></label
+      >
       <input
-        v-model="form.jenis_penugasan"
+        v-model="form.jenis_penugasan_lainnya"
         type="text"
         class="input-field"
-        placeholder="Contoh: Audit Reguler, Audit Khusus, Reviu LK"
+        placeholder="Sebutkan jenis penugasan"
       />
     </div>
 
@@ -80,7 +89,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { usePkptStore } from '@/stores/pkpt'
-import { STATUS_PENUGASAN } from '@/utils/constants'
+import { STATUS_PENUGASAN, JENIS_KEGIATAN } from '@/utils/constants'
 
 const props = defineProps({
   item: { type: Object, default: null },
@@ -94,10 +103,13 @@ const errorMsg = ref('')
 
 const pkptList = ref([])
 
+const isLainnya = (val) => val && !JENIS_KEGIATAN.slice(0, -1).includes(val)
+
 const form = ref({
   pkpt_id: props.pkptId || props.item?.pkpt_id || '',
   nama_penugasan: props.item?.nama_penugasan || '',
-  jenis_penugasan: props.item?.jenis_penugasan || '',
+  jenis_penugasan: props.item && isLainnya(props.item?.jenis_penugasan) ? 'Lainnya' : (props.item?.jenis_penugasan || ''),
+  jenis_penugasan_lainnya: props.item && isLainnya(props.item?.jenis_penugasan) ? props.item.jenis_penugasan : '',
   tanggal_mulai: props.item?.tanggal_mulai || '',
   tanggal_selesai: props.item?.tanggal_selesai || '',
   status: props.item?.status || 'Belum Mulai'
@@ -105,10 +117,12 @@ const form = ref({
 
 watch(() => props.item, (val) => {
   if (val) {
+    const lainnya = isLainnya(val.jenis_penugasan)
     form.value = {
       pkpt_id: val.pkpt_id,
       nama_penugasan: val.nama_penugasan,
-      jenis_penugasan: val.jenis_penugasan,
+      jenis_penugasan: lainnya ? 'Lainnya' : (val.jenis_penugasan || ''),
+      jenis_penugasan_lainnya: lainnya ? val.jenis_penugasan : '',
       tanggal_mulai: val.tanggal_mulai || '',
       tanggal_selesai: val.tanggal_selesai || '',
       status: val.status
@@ -122,21 +136,21 @@ const handleSubmit = () => {
     errorMsg.value = 'Nama penugasan wajib diisi.'
     return
   }
-  if (!form.value.jenis_penugasan.trim()) {
-    errorMsg.value = 'Jenis penugasan wajib diisi.'
+  if (!form.value.jenis_penugasan) {
+    errorMsg.value = 'Jenis penugasan wajib dipilih.'
+    return
+  }
+  if (form.value.jenis_penugasan === 'Lainnya' && !form.value.jenis_penugasan_lainnya.trim()) {
+    errorMsg.value = 'Keterangan jenis penugasan wajib diisi.'
     return
   }
   if (!props.pkptId && !form.value.pkpt_id) {
     errorMsg.value = 'PKPT wajib dipilih.'
     return
   }
-  emit('submit', { ...form.value })
+  emit('submit', {
+    ...form.value,
+    jenis_penugasan: form.value.jenis_penugasan === 'Lainnya' ? form.value.jenis_penugasan_lainnya : form.value.jenis_penugasan
+  })
 }
-
-onMounted(async () => {
-  if (!props.pkptId) {
-    await pkptStore.fetchAll({ limit: 100 })
-    pkptList.value = pkptStore.list
-  }
-})
 </script>

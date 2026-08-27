@@ -101,12 +101,10 @@
       </div>
 
       <AppPagination
-        v-if="monitoring.logPagination.total_pages > 1"
         :current-page="monitoring.logPagination.page"
-        :total-pages="monitoring.logPagination.total_pages"
         :total="monitoring.logPagination.total"
         :per-page="monitoring.logPagination.limit"
-        @change="monitoring.setLogPage"
+        @update:current-page="monitoring.setLogPage"
       />
     </div>
   </div>

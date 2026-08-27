@@ -364,19 +364,10 @@
               </div>
             </div>
             <div style="display:flex; gap:0.5rem; align-items:center;">
-              <!-- Tombol khusus LHP -->
-              <RouterLink
-                v-if="dok.jenis_dokumen === 'LHP'"
-                :to="`/lhp/${dok.id}`"
-                class="btn-secondary"
-                style="font-size:0.78rem; padding:0.375rem 0.75rem;"
-              >
-                Lihat Temuan
-              </RouterLink>
               <a
                 v-if="dok.file_path"
                 :href="`http://localhost:3000/${dok.file_path}`"
-                target="_blank"
+                download
                 class="btn-icon"
               >
                 <svg

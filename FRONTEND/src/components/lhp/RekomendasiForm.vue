@@ -139,10 +139,12 @@
       </label>
       <input
         v-if="form.adalah_tgr"
-        v-model="form.nilai_temuan"
-        type="number"
+        :value="nilaiTemuanDisplay"
+        @input="onNilaiTemuanInput"
+        type="text"
+        inputmode="decimal"
         class="input-field"
-        placeholder="Nilai temuan (Rp)"
+        placeholder="Contoh: 1.500.000,50"
         style="flex:1;"
       />
     </div>
@@ -174,6 +176,32 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel'])
 
 const errorMsg = ref('')
+const nilaiTemuanDisplay = ref('')
+
+// Format input jadi "1.500.000,50" saat diketik
+const formatRupiahInput = (raw) => {
+  let clean = raw.replace(/[^\d,]/g, '')
+  const parts = clean.split(',')
+  let intPart = (parts[0] || '').replace(/\D/g, '')
+  intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  if (parts.length > 1) {
+    const decPart = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2)
+    return `${intPart},${decPart}`
+  }
+  return intPart
+}
+
+// Ubah "1.500.000,50" jadi angka 1500000.5 untuk dikirim ke backend
+const parseRupiahInput = (display) => {
+  if (!display) return null
+  const normalized = display.replace(/\./g, '').replace(',', '.')
+  const num = parseFloat(normalized)
+  return isNaN(num) ? null : num
+}
+
+const onNilaiTemuanInput = (e) => {
+  nilaiTemuanDisplay.value = formatRupiahInput(e.target.value)
+}
 
 const form = ref({
   uraian_rekomendasi: '',
@@ -194,9 +222,11 @@ const form = ref({
 
 const handleSubmit = () => {
   errorMsg.value = ''
+  const nilaiTemuan = parseRupiahInput(nilaiTemuanDisplay.value)
+
   if (!form.value.uraian_rekomendasi.trim()) { errorMsg.value = 'Uraian rekomendasi wajib diisi.'; return }
   if (!form.value.ditujukan_kepada.trim()) { errorMsg.value = 'Ditujukan kepada wajib diisi.'; return }
-  if (form.value.adalah_tgr && !form.value.nilai_temuan) { errorMsg.value = 'Nilai temuan TGR wajib diisi.'; return }
+  if (form.value.adalah_tgr && !nilaiTemuan) { errorMsg.value = 'Nilai temuan TGR wajib diisi.'; return }
   if (!form.value.pihak.nama.trim()) { errorMsg.value = 'Nama pihak wajib diisi.'; return }
   if (!form.value.pihak.jenis_pihak) { errorMsg.value = 'Jenis pihak wajib dipilih.'; return }
 
@@ -204,7 +234,7 @@ const handleSubmit = () => {
     uraian_rekomendasi: form.value.uraian_rekomendasi,
     ditujukan_kepada: form.value.ditujukan_kepada,
     adalah_tgr: form.value.adalah_tgr,
-    nilai_temuan: form.value.adalah_tgr ? form.value.nilai_temuan : null,
+    nilai_temuan: form.value.adalah_tgr ? nilaiTemuan : null,
     batas_waktu_tl: form.value.batas_waktu_tl || null,
     pihak_id: null,
     pihak: { ...form.value.pihak }

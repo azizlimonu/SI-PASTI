@@ -74,6 +74,7 @@
               >
                 Rekomendasi
               </p>
+
               <p
                 style="font-size:0.8rem; color:var(--text-secondary); margin:0;"
               >
@@ -84,6 +85,24 @@
               >
                 Kepada: {{ tl.rekomendasi?.ditujukan_kepada }}
               </p>
+              <div
+                style="display:flex; align-items:center; gap:0.375rem; flex-wrap:wrap; margin-top:0.375rem;"
+              >
+                <span
+                  :class="`badge badge-${tl.rekomendasi?.adalah_tgr ? 'purple' : 'blue'}`"
+                  style="font-size:0.65rem;"
+                >
+                  {{ tl.rekomendasi?.adalah_tgr ? 'TGR' : 'Administratif' }}
+                </span>
+                <span
+                  v-if="tl.rekomendasi?.pihak"
+                  style="font-size:0.72rem; color:var(--text-muted);"
+                >
+                  Pihak:
+                  {{ tl.rekomendasi.pihak.nama }}
+                  ({{ tl.rekomendasi.pihak.jenis_pihak }})
+                </span>
+              </div>
             </div>
 
             <div
@@ -137,6 +156,7 @@
             :href="bukti.file_path ?
             `http://localhost:3000/${bukti.file_path}` : bukti.link_bukti"
             target="_blank"
+            :download="bukti.file_path ? true : null"
             style="display:inline-flex; align-items:center;
             gap:0.375rem; padding:0.25rem 0.625rem; border-radius:0.375rem;
             background:var(--accent-light); border:1px solid

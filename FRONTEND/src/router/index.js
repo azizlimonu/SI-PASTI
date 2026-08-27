@@ -70,6 +70,11 @@ const router = createRouter({
           component: () => import('@/views/pihak/PihakListView.vue')
         },
         {
+          path: 'pihak/:id',
+          name: 'pihak-detail',
+          component: () => import('@/views/pihak/PihakDetailView.vue')
+        },
+        {
           path: 'users',
           name: 'users',
           component: () => import('@/views/users/UserManagementView.vue'),

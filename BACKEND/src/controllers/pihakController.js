@@ -61,6 +61,20 @@ const getAllPihak = async (req, res) => {
 // ═══════════════════════════════════════════
 const getRiwayatTGR = async (req, res) => {
   try {
+    const { search } = req.query;
+    const pihakWhere = {};
+    if (search) {
+      pihakWhere[Op.or] = [
+        { nama: { [Op.like]: `%${search}%` } },
+        { nip: { [Op.like]: `%${search}%` } },
+        { nik: { [Op.like]: `%${search}%` } },
+        { instansi_perusahaan: { [Op.like]: `%${search}%` } }
+      ];
+    } else {
+      // Tanpa keyword pencarian, tidak menampilkan apa-apa (hindari load semua data)
+      return res.json({ success: true, data: [] });
+    }
+
     const pihakList = await Pihak.findAll({
       include: [{
         model: Rekomendasi,

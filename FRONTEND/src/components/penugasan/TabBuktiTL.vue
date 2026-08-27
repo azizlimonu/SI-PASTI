@@ -62,6 +62,164 @@
       </div>
     </div>
 
+    <!-- Progress TGR per Rekomendasi -->
+    <div
+      v-if="rekomendasiTgr.length"
+      class="glass-card"
+      style="padding:0; margin-bottom:1rem;"
+    >
+      <div
+        style="padding:1rem 1.25rem; border-bottom:1px solid var(--border-color);"
+      >
+        <p
+          style="font-size:0.85rem; font-weight:600; color:var(--text-primary); margin:0;"
+        >
+          Progress TGR per Rekomendasi
+        </p>
+      </div>
+      <div class="table-wrapper" style="border:none; border-radius:0;">
+        <table class="table-base">
+          <thead>
+            <tr>
+              <th>Temuan</th>
+              <th>Pihak</th>
+              <th>Nilai Temuan</th>
+              <th>Terlunasi</th>
+              <th>Sisa</th>
+              <th>Progress</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="r in rekomendasiTgr" :key="r.id">
+              <tr>
+                <td style="font-size:0.8rem; max-width:200px;">
+                  {{ r.temuan?.judul_temuan }}
+                </td>
+                <td style="font-size:0.8rem;">{{ r.pihak?.nama || '-' }}</td>
+                <td style="font-size:0.8rem; white-space:nowrap;">
+                  {{ formatRupiah(r.nilai_temuan) }}
+                </td>
+                <td
+                  style="font-size:0.8rem; white-space:nowrap; color:#34d399;"
+                >
+                  {{ formatRupiah(r.nilai_terlunasi) }}
+                </td>
+                <td
+                  style="font-size:0.8rem; white-space:nowrap; color:#f87171;"
+                >
+                  {{ formatRupiah((r.nilai_temuan || 0) - (r.nilai_terlunasi || 0)) }}
+                </td>
+                <td style="min-width:110px;">
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <div
+                      style="flex:1; height:6px; background:var(--bg-hover); border-radius:9999px; overflow:hidden;"
+                    >
+                      <div
+                        :style="`height:100%; width:${tgrPersen(r)}%; background:linear-gradient(90deg,#059669,#34d399); border-radius:9999px;`"
+                      ></div>
+                    </div>
+                    <span
+                      style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;"
+                      >{{ tgrPersen(r) }}%</span
+                    >
+                  </div>
+                </td>
+                <td>
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span
+                      :class="`badge badge-${tgrPersen(r) >= 100 ? 'green' : 'yellow'}`"
+                      style="font-size:0.68rem;"
+                    >
+                      {{ tgrPersen(r) >= 100 ? 'Lunas' : 'Belum Lunas' }}
+                    </span>
+                    <button
+                      class="btn-icon"
+                      style="font-size:0.68rem;"
+                      @click="toggleRiwayatSetoran(r.id)"
+                    >
+                      {{ expandedSetoran[r.id] ? 'Tutup' : 'Riwayat' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="expandedSetoran[r.id]">
+                <td
+                  colspan="7"
+                  style="padding:0.75rem 1rem; background:var(--bg-hover);"
+                >
+                  <div
+                    v-if="loadingSetoran[r.id]"
+                    style="display:flex; justify-content:center; padding:1rem;"
+                  >
+                    <span class="loading-spinner"></span>
+                  </div>
+                  <div
+                    v-else-if="!riwayatSetoran[r.id]?.length"
+                    style="font-size:0.78rem; color:var(--text-muted); padding:0.5rem 0;"
+                  >
+                    Belum ada setoran untuk rekomendasi ini.
+                  </div>
+                  <div
+                    v-else
+                    style="display:flex; flex-direction:column; gap:0.5rem;"
+                  >
+                    <div
+                      v-for="s in riwayatSetoran[r.id]"
+                      :key="s.id"
+                      style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.75rem; border-radius:0.5rem; background:var(--bg-card); border:1px solid var(--border-color);"
+                    >
+                      <div>
+                        <p
+                          style="font-size:0.8rem; font-weight:500; color:var(--text-primary); margin:0;"
+                        >
+                          {{ formatRupiah(s.jumlah_setoran) }}
+                          <span
+                            style="font-size:0.7rem; color:var(--text-muted); font-weight:400;"
+                          >
+                            — {{ formatDate(s.tanggal_setor) }}</span
+                          >
+                        </p>
+                        <p
+                          v-if="s.keterangan"
+                          style="font-size:0.72rem; color:var(--text-muted); margin:0.125rem 0 0;"
+                        >
+                          {{ s.keterangan }}
+                        </p>
+                        <p
+                          style="font-size:0.68rem; color:var(--text-muted); margin:0.125rem 0 0;"
+                        >
+                          Dicatat oleh {{ s.creator?.nama }}
+                        </p>
+                      </div>
+                      <a
+                        v-if="s.file_path"
+                        :href="`http://localhost:3000/${s.file_path}`"
+                        download
+                        class="btn-secondary"
+                        style="font-size:0.7rem; padding:0.2rem 0.5rem;"
+                      >
+                        Download Bukti
+                      </a>
+                      <a
+                        v-else-if="s.link_bukti"
+                        :href="s.link_bukti"
+                        target="_blank"
+                        class="btn-secondary"
+                        style="font-size:0.7rem; padding:0.2rem 0.5rem;"
+                      >
+                        Buka Link
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div
       v-if="loading"
       style="display:flex; justify-content:center; padding:2rem;"
@@ -77,91 +235,120 @@
       </div>
     </div>
 
-    <div
-      v-else
-      style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:0.75rem;"
-    >
-      <div
-        v-for="bukti in buktiList"
-        :key="bukti.id"
-        class="glass-card"
-        style="padding:1rem;"
-      >
-        <div style="display:flex; align-items:flex-start; gap:0.75rem;">
-          <div
-            style="width:36px; height:36px; border-radius:0.5rem; background:var(--accent-light); border:1px solid rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; flex-shrink:0;"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              fill="currentColor"
-              style="width:18px;height:18px;color:var(--accent);"
-            >
-              <path
-                d="M3 3.5A1.5 1.5 0 0 1 4.5 2h3.879a1.5 1.5 0 0 1 1.06.44l3.122 3.12A1.5 1.5 0 0 1 13 6.622V12.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5v-9Z"
-              />
-            </svg>
-          </div>
-          <div style="flex:1; min-width:0;">
-            <p
-              style="font-size:0.85rem; font-weight:600; color:var(--text-primary); margin:0 0 0.25rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-            >
-              {{ bukti.judul_bukti }}
-            </p>
-            <p
-              v-if="bukti.keterangan"
-              style="font-size:0.75rem; color:var(--text-muted); margin:0 0 0.5rem;"
-            >
-              {{ bukti.keterangan }}
-            </p>
-            <p
-              style="font-size:0.7rem; color:var(--text-muted); margin:0 0 0.625rem;"
-            >
-              {{ formatDate(bukti.created_at) }} — {{ bukti.uploader?.nama }}
-            </p>
-            <div style="display:flex; gap:0.375rem; flex-wrap:wrap;">
-              <a
-                v-if="bukti.file_path"
-                :href="`http://localhost:3000/${bukti.file_path}`"
-                target="_blank"
-                class="btn-secondary"
-                style="font-size:0.75rem; padding:0.25rem 0.625rem;"
-              >
-                Download
-              </a>
-              <a
-                v-if="bukti.link_bukti"
-                :href="bukti.link_bukti"
-                target="_blank"
-                class="btn-secondary"
-                style="font-size:0.75rem; padding:0.25rem 0.625rem;"
-              >
-                Buka Link
-              </a>
-              <button
-                v-if="auth.isAdminTL"
-                class="btn-icon"
-                @click="handleDelete(bukti)"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  style="width:13px;height:13px;color:#f87171;"
+    <div v-else class="glass-card" style="padding:0;">
+      <div class="table-wrapper" style="border:none; border-radius:0;">
+        <table class="table-base">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Judul Bukti</th>
+              <th>Tindak Lanjut / Rekomendasi Terkait</th>
+              <th>Jenis</th>
+              <th>Pihak</th>
+              <th>Temuan</th>
+              <th>Tanggal Upload</th>
+              <th>File/Link</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(bukti, i) in buktiList" :key="bukti.id">
+              <td style="color:var(--text-muted); font-size:0.8rem;">
+                {{ i + 1 }}
+              </td>
+              <td style="font-size:0.82rem; font-weight:500; max-width:180px;">
+                {{ bukti.judul_bukti }}
+                <p
+                  v-if="bukti.keterangan"
+                  style="font-size:0.7rem; color:var(--text-muted); margin:0.125rem 0 0; font-weight:400;"
                 >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+                  {{ bukti.keterangan }}
+                </p>
+              </td>
+              <td style="font-size:0.78rem; max-width:220px;">
+                <div
+                  v-for="(tl, ti) in bukti.relatedTL"
+                  :key="ti"
+                  style="margin-bottom:0.25rem;"
+                >
+                  {{ tl.uraian_tl }}
+                  <span style="color:var(--text-muted);"
+                    >— {{ tl.rekomendasi?.ditujukan_kepada }}</span
+                  >
+                </div>
+              </td>
+              <td>
+                <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                  <span
+                    v-for="(jenis, ji) in bukti.jenisSet"
+                    :key="ji"
+                    :class="`badge badge-${jenis === 'TGR' ? 'purple' : 'blue'}`"
+                    style="font-size:0.65rem; width:fit-content;"
+                  >
+                    {{ jenis }}
+                  </span>
+                </div>
+              </td>
+              <td style="font-size:0.78rem;">
+                {{ bukti.pihakSet.join(', ') || '-' }}
+              </td>
+              <td style="font-size:0.78rem; max-width:160px;">
+                {{ bukti.temuanSet.join(', ') }}
+              </td>
+              <td
+                style="font-size:0.78rem; white-space:nowrap; color:var(--text-muted);"
+              >
+                {{ formatDate(bukti.created_at) }}
+                <p style="margin:0.125rem 0 0;">{{ bukti.uploader?.nama }}</p>
+              </td>
+              <td>
+                <div style="display:flex; gap:0.375rem; flex-wrap:wrap;">
+                  <a
+                    v-if="bukti.file_path"
+                    :href="`http://localhost:3000/${bukti.file_path}`"
+                    download
+                    class="btn-secondary"
+                    style="font-size:0.72rem; padding:0.2rem 0.5rem;"
+                  >
+                    Download
+                  </a>
+                  <a
+                    v-if="bukti.link_bukti"
+                    :href="bukti.link_bukti"
+                    target="_blank"
+                    class="btn-secondary"
+                    style="font-size:0.72rem; padding:0.2rem 0.5rem;"
+                  >
+                    Link
+                  </a>
+                </div>
+              </td>
+              <td>
+                <button
+                  v-if="auth.isAdminTL"
+                  class="btn-icon"
+                  @click="handleDelete(bukti)"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 16 16"
+                    fill="currentColor"
+                    style="width:13px;height:13px;color:#f87171;"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-
+    <!-- sampai sini -->
     <!-- Modal Upload Bukti Biasa -->
     <AppModal
       v-model="showForm"
@@ -412,16 +599,35 @@ const tlOptions = computed(() => {
   return out
 })
 
-// Semua rekomendasi TGR, untuk dropdown setoran
+// Semua rekomendasi TGR, untuk dropdown setoran & panel progress TGR
 const rekomendasiTgr = computed(() => {
   const out = []
   for (const t of temuanLengkap.value) {
     for (const r of (t.rekomendasis || [])) {
-      if (r.adalah_tgr) out.push(r)
+      if (r.adalah_tgr) out.push({ ...r, temuan: t })
     }
   }
   return out
 })
+
+const tgrPersen = (r) => {
+  const total = r.nilai_temuan || 0
+  const lunas = r.nilai_terlunasi || 0
+  return total > 0 ? Math.min(100, Math.round((lunas / total) * 100)) : 0
+}
+
+const expandedSetoran = ref({})
+const riwayatSetoran = ref({})
+const loadingSetoran = ref({})
+
+const toggleRiwayatSetoran = async (rekomendasiId) => {
+  expandedSetoran.value[rekomendasiId] = !expandedSetoran.value[rekomendasiId]
+  if (expandedSetoran.value[rekomendasiId] && !riwayatSetoran.value[rekomendasiId]) {
+    loadingSetoran.value[rekomendasiId] = true
+    riwayatSetoran.value[rekomendasiId] = await dokumen.fetchSetoranByRekomendasi(rekomendasiId)
+    loadingSetoran.value[rekomendasiId] = false
+  }
+}
 
 // Progress rekomendasi administratif per temuan
 const temuanAdministratif = computed(() => {
@@ -452,17 +658,24 @@ const loadBukti = async () => {
   }
   temuanLengkap.value = hasilTemuan
 
-  const allBukti = []
-  const seen = new Set()
+  const buktiMap = new Map()
   for (const tl of tlOptions.value) {
     for (const b of (tl.buktis || [])) {
-      if (!seen.has(b.id)) {
-        seen.add(b.id)
-        allBukti.push(b)
+      if (!buktiMap.has(b.id)) {
+        buktiMap.set(b.id, { ...b, relatedTL: [] })
       }
+      buktiMap.get(b.id).relatedTL.push(tl)
     }
   }
-  buktiList.value = allBukti.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  const enriched = Array.from(buktiMap.values()).map(b => {
+    const jenisSet = [...new Set(b.relatedTL.map(tl => tl.rekomendasi?.adalah_tgr ? 'TGR' : 'Administratif'))]
+    const pihakSet = [...new Set(b.relatedTL.map(tl => tl.rekomendasi?.pihak?.nama).filter(Boolean))]
+    const temuanSet = [...new Set(b.relatedTL.map(tl => tl.temuan?.judul_temuan).filter(Boolean))]
+    return { ...b, jenisSet, pihakSet, temuanSet }
+  })
+
+  buktiList.value = enriched.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
   loading.value = false
 }

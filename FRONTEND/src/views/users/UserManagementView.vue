@@ -155,12 +155,10 @@
       </div>
 
       <AppPagination
-        v-if="userStore.pagination.total_pages > 1"
         :current-page="userStore.pagination.page"
-        :total-pages="userStore.pagination.total_pages"
         :total="userStore.pagination.total"
         :per-page="userStore.pagination.limit"
-        @change="userStore.setPage"
+        @update:current-page="userStore.setPage"
       />
     </div>
 
