@@ -12,7 +12,9 @@ const { getKeirbanFilter } = require('../middleware/auth');
 const getDashboard = async (req, res) => {
   try {
     const user = req.user;
-    const pkptWhere = { ...getKeirbanFilter(user) };
+    const { tahun, keirbanan } = req.query;
+    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
+    if (tahun) pkptWhere.tahun = tahun;
 
     // Total PKPT
     const totalPkpt = await Pkpt.count({ where: pkptWhere });
@@ -174,7 +176,6 @@ const getDashboard = async (req, res) => {
     });
 
     // Format rekomendasi stats
-    // Format rekomendasi stats
     const rekStats = {
       belum: 0, dalam_proses: 0, selesai: 0
     };
@@ -184,6 +185,83 @@ const getDashboard = async (req, res) => {
       if (r.status === 'Selesai') rekStats.selesai = parseInt(r.total);
     });
     rekStats.total = rekStats.belum + rekStats.dalam_proses + rekStats.selesai;
+
+    // ═══════════════════════════════════════════
+    // BACKLOG — PR dari tahun-tahun SEBELUM tahun aktif
+    // (hanya dihitung kalau parameter tahun dikirim, karena backlog
+    // itu konsepnya relatif terhadap 1 tahun acuan)
+    // ═══════════════════════════════════════════
+    let backlog = null;
+    if (tahun) {
+      const backlogPkptWhere = {
+        ...getKeirbanFilter(user, keirbanan),
+        tahun: { [Op.lt]: tahun }
+      };
+
+      // Penugasan tahun lalu yang belum ada dokumen LHP sama sekali
+      // (dihitung lewat 2 query sederhana + selisih, lebih aman daripada
+      // count() dengan where lewat asosiasi nested yang sering error di Sequelize)
+      const penugasanBacklogRows = await Penugasan.findAll({
+        attributes: ['id'],
+        include: [{ model: Pkpt, as: 'pkpt', where: backlogPkptWhere, attributes: [] }],
+        raw: true
+      });
+      const idsPenugasanBacklog = penugasanBacklogRows.map(p => p.id);
+
+      let penugasanDenganLhp = 0;
+      if (idsPenugasanBacklog.length > 0) {
+        const dokumenLhpRows = await DokumenPenugasan.findAll({
+          attributes: [
+            [sequelize.fn('DISTINCT', sequelize.col('penugasan_id')), 'penugasan_id']
+          ],
+          where: {
+            penugasan_id: { [Op.in]: idsPenugasanBacklog },
+            jenis_dokumen: 'LHP'
+          },
+          raw: true
+        });
+        penugasanDenganLhp = dokumenLhpRows.length;
+      }
+
+      const penugasanBelumLhp = idsPenugasanBacklog.length - penugasanDenganLhp;
+
+      // Rekomendasi tahun lalu yang belum/masih proses TL
+      const backlogRekStats = await Rekomendasi.findAll({
+        attributes: [
+          'status',
+          [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
+        ],
+        include: [{
+          model: Temuan, as: 'temuan',
+          attributes: [],
+          include: [{
+            model: DokumenPenugasan, as: 'dokumen',
+            attributes: [],
+            include: [{
+              model: Penugasan, as: 'penugasan',
+              attributes: [],
+              include: [{
+                model: Pkpt, as: 'pkpt',
+                where: backlogPkptWhere,
+                attributes: []
+              }]
+            }]
+          }]
+        }],
+        group: ['status'],
+        raw: true
+      });
+
+      const findStat = (status) =>
+        parseInt(backlogRekStats.find(r => r.status === status)?.total || 0);
+
+      backlog = {
+        tahun_referensi: parseInt(tahun),
+        penugasan_belum_lhp: penugasanBelumLhp,
+        rekomendasi_belum_tl: findStat('Belum Ditindaklanjuti'),
+        rekomendasi_proses_tl: findStat('Dalam Proses')
+      };
+    }
 
     // Breakdown rekomendasi Administratif vs TGR
     const rekomendasiJenisRaw = await Rekomendasi.findAll({
@@ -267,6 +345,10 @@ const getDashboard = async (req, res) => {
     return res.json({
       success: true,
       data: {
+        filter: {
+          tahun: tahun ? parseInt(tahun) : null,
+          keirbanan: pkptWhere.keirbanan || 'ALL'
+        },
         pkpt: {
           total: totalPkpt,
           aktif: pkptAktif,
@@ -281,6 +363,7 @@ const getDashboard = async (req, res) => {
         dokumen: { total: totalDokumen },
         temuan: { total: totalTemuan },
         rekomendasi: rekStats,
+        backlog,
         rekomendasi_jenis: rekJenis,
         bukti_tl_progress: buktiTlProgress,
         tgr: {
@@ -292,6 +375,7 @@ const getDashboard = async (req, res) => {
         alert: {
           hampir_jatuh_tempo: hampirJatuhTempo
         },
+        backlog,
         penugasan_terbaru: penugasanTerbaru
       }
     });
@@ -309,7 +393,9 @@ const getDashboard = async (req, res) => {
 const getAlertSPT = async (req, res) => {
   try {
     const user = req.user;
-    const pkptWhere = { ...getKeirbanFilter(user) };
+    const { tahun, keirbanan } = req.query;
+    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
+    if (tahun) pkptWhere.tahun = tahun;
 
     const tigaPuluhHariLalu = new Date();
     tigaPuluhHariLalu.setDate(tigaPuluhHariLalu.getDate() - 30);
@@ -379,7 +465,9 @@ const getAlertSPT = async (req, res) => {
 const getAlertTL = async (req, res) => {
   try {
     const user = req.user;
-    const pkptWhere = { ...getKeirbanFilter(user) };
+    const { tahun, keirbanan } = req.query;
+    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
+    if (tahun) pkptWhere.tahun = tahun;
     const hariIni = new Date();
     const tigaHariLagi = new Date();
     tigaHariLagi.setDate(tigaHariLagi.getDate() + 3);
@@ -713,28 +801,31 @@ const getLog = async (req, res) => {
     };
 
     // Filter keirbanan
+    // Filter keirbanan — admin/irban SELALU dikunci ke keirbanan sendiri,
+    // parameter apa pun dari query (keirbanan/bagian) diabaikan untuk mereka.
     if (user.keirbanan !== 'ALL') {
       where.keirbanan = user.keirbanan;
-    } else if (keirbanan) {
-      where.keirbanan = keirbanan;
+    } else {
+      if (keirbanan) where.keirbanan = keirbanan;
+
+      // Filter bagian: I/II/III/IV/V (keirbanan), TL (admin_tl), atau PUSAT
+      // (superadmin/inspektur) — HANYA berlaku untuk user ber-akses ALL.
+      if (bagian) {
+        if (['I', 'II', 'III', 'IV', 'V'].includes(bagian)) {
+          where.keirbanan = bagian;
+        } else if (bagian === 'TL') {
+          where.keirbanan = 'ALL';
+          userInclude.where = { role: 'admin_tl' };
+          userInclude.required = true;
+        } else if (bagian === 'PUSAT') {
+          where.keirbanan = 'ALL';
+          userInclude.where = { role: { [Op.in]: ['superadmin', 'inspektur'] } };
+          userInclude.required = true;
+        }
+      }
     }
 
     if (aksi) where.aksi = { [Op.like]: `%${aksi}%` };
-
-    // Filter bagian: I/II/III/IV/V (keirbanan), TL (admin_tl), atau PUSAT (superadmin/inspektur)
-    if (bagian) {
-      if (['I', 'II', 'III', 'IV', 'V'].includes(bagian)) {
-        where.keirbanan = bagian;
-      } else if (bagian === 'TL') {
-        where.keirbanan = 'ALL';
-        userInclude.where = { role: 'admin_tl' };
-        userInclude.required = true;
-      } else if (bagian === 'PUSAT') {
-        where.keirbanan = 'ALL';
-        userInclude.where = { role: { [Op.in]: ['superadmin', 'inspektur'] } };
-        userInclude.required = true;
-      }
-    }
 
     const offset = (page - 1) * limit;
 

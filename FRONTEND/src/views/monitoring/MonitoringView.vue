@@ -4,153 +4,160 @@
       <div>
         <h1 class="page-title">Monitoring</h1>
         <p class="page-subtitle">
-          Rekap Penugasan &amp; Tindak Lanjut — Tahun {{ ui.tahunAktif }}
+          Dashboard Total &amp; per Keirbanan — Tahun {{ ui.tahunAktif }}
         </p>
       </div>
     </div>
 
-    <!-- Filter -->
     <div
+      v-if="!canAccess"
       class="glass-card"
-      style="padding:1rem; margin-bottom:1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;"
+      style="padding:2rem; text-align:center; color:var(--text-muted);"
     >
-      <div style="position:relative; flex:1; min-width:200px;">
-        <input
-          v-model="search"
-          type="text"
-          class="input-field"
-          placeholder="Cari nama penugasan..."
-        />
-      </div>
-      <select
-        v-if="auth.hasAllAccess"
-        v-model="filterKeirbanan"
-        class="select-field"
-        style="width:160px;"
-        @change="loadData"
-      >
-        <option value="">Semua Keirbanan</option>
-        <option v-for="kb in KEIRBANAN" :key="kb" :value="kb">
-          Keirbanan {{ kb }}
-        </option>
-      </select>
+      <p style="font-size:0.85rem; max-width:480px; margin:0 auto;">
+        Halaman ini menampilkan dashboard total dan detail per keirbanan (I–V),
+        khusus untuk Superadmin dan Inspektur. Statistik untuk keirbanan Anda
+        sendiri sudah tersedia di halaman
+        <RouterLink
+          to="/"
+          style="color:var(--accent); text-decoration:none; font-weight:500;"
+          >Dashboard</RouterLink
+        >.
+      </p>
     </div>
 
-    <!-- Table -->
-    <div class="glass-card">
-      <div
-        v-if="monitoring.loading"
-        style="padding:3rem; display:flex; justify-content:center;"
-      >
-        <span class="loading-spinner"></span>
+    <template v-else>
+      <div class="tabs-bar">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          :class="['tab-btn', { active: activeTab === tab.key }]"
+          @click="activeTab = tab.key"
+        >
+          <span
+            v-if="tab.key !== 'ALL'"
+            class="tab-dot"
+            :style="{ backgroundColor: keirbanHex(tab.key) }"
+          ></span>
+          {{ tab.label }}
+        </button>
       </div>
 
-      <div v-else-if="!filteredTable.length" class="empty-state">
-        <p style="font-weight:500; color:var(--text-secondary);">
-          Belum ada data penugasan
-        </p>
-        <p style="font-size:0.8rem;">
-          Tidak ada penugasan pada tahun {{ ui.tahunAktif }}.
-        </p>
-      </div>
-
-      <div v-else class="table-wrapper" style="border:none; border-radius:0;">
-        <table class="table-base">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th v-if="auth.hasAllAccess">Keirbanan</th>
-              <th>Nama Penugasan</th>
-              <th>Laporan</th>
-              <th>Temuan</th>
-              <th>Rekomendasi</th>
-              <th>Status Tindak Lanjut</th>
-              <th>Tindak Lanjut</th>
-              <th>Bukti TL</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, i) in filteredTable" :key="item.penugasan_id">
-              <td style="color:var(--text-muted); font-size:0.8rem;">
-                {{ i + 1 }}
-              </td>
-              <td v-if="auth.hasAllAccess">
-                <span
-                  :class="`badge badge-${BADGE_COLOR[item.keirbanan] || 'gray'}`"
-                >
-                  Keirbanan {{ item.keirbanan }}
-                </span>
-              </td>
-              <td>
-                <RouterLink
-                  :to="`/penugasan/${item.penugasan_id}`"
-                  style="color:var(--accent); text-decoration:none; font-weight:500;"
-                >
-                  {{ item.nama_penugasan }}
-                </RouterLink>
-              </td>
-              <td>
-                <span
-                  :class="`badge badge-${item.ada_lhp ? 'green' : 'gray'}`"
-                  style="font-size:0.7rem;"
-                >
-                  {{ item.ada_lhp ? 'Ada' : 'Belum' }}
-                </span>
-              </td>
-              <td>{{ item.jumlah_temuan }}</td>
-              <td>{{ item.jumlah_rekomendasi }}</td>
-              <td>
-                <div style="display:flex; gap:0.3rem; flex-wrap:wrap;">
-                  <span class="badge badge-green" style="font-size:0.68rem;">
-                    {{ item.status_tindak_lanjut.selesai }} Selesai
-                  </span>
-                  <span class="badge badge-yellow" style="font-size:0.68rem;">
-                    {{ item.status_tindak_lanjut.dalam_proses }} Proses
-                  </span>
-                  <span class="badge badge-red" style="font-size:0.68rem;">
-                    {{ item.status_tindak_lanjut.belum }} Belum
-                  </span>
-                </div>
-              </td>
-              <td>{{ item.jumlah_tindak_lanjut }}</td>
-              <td>{{ item.jumlah_bukti_tl }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <DashboardStats
+        :dashboard="current.dashboard"
+        :alert-spt="current.alertSpt"
+        :alert-tl="current.alertTl"
+        :loading="current.loading"
+        :show-keirbanan-column="activeTab === 'ALL'"
+      />
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useMonitoringStore } from '@/stores/monitoring'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
-import { KEIRBANAN, BADGE_COLOR } from '@/utils/constants'
+import { useMonitoringStore } from '@/stores/monitoring'
+import DashboardStats from '@/components/dashboard/DashboardStats.vue'
+import { KEIRBANAN } from '@/utils/constants'
 
-const monitoring = useMonitoringStore()
 const auth = useAuthStore()
 const ui = useUIStore()
+const monitoring = useMonitoringStore()
 
-const search = ref('')
-const filterKeirbanan = ref('')
+const canAccess = computed(() => ['superadmin', 'inspektur'].includes(auth.user?.role))
 
-const filteredTable = computed(() => {
-  if (!search.value.trim()) return monitoring.table
-  const q = search.value.toLowerCase()
-  return monitoring.table.filter(item =>
-    item.nama_penugasan.toLowerCase().includes(q)
-  )
-})
+const tabs = [
+  { key: 'ALL', label: 'Total (Seluruh Keirbanan)' },
+  ...KEIRBANAN.map((kb) => ({ key: kb, label: `Keirbanan ${kb}` }))
+]
 
-const loadData = () => {
-  monitoring.fetchTable({
-    tahun: ui.tahunAktif,
-    keirbanan: filterKeirbanan.value || undefined
-  })
+const activeTab = ref('ALL')
+
+const keirbanHexMap = { I: '#3b82f6', II: '#10b981', III: '#f59e0b', IV: '#8b5cf6', V: '#ef4444' }
+const keirbanHex = (kb) => keirbanHexMap[kb] || '#64748b'
+
+const cache = reactive({})
+const cacheKey = (tab) => `${ui.tahunAktif}-${tab}`
+
+const emptyEntry = { dashboard: null, alertSpt: [], alertTl: [], loading: true }
+
+const current = computed(() => cache[cacheKey(activeTab.value)] || emptyEntry)
+
+const loadTab = async (tab) => {
+  const key = cacheKey(tab)
+  if (cache[key]) return
+  cache[key] = { dashboard: null, alertSpt: [], alertTl: [], loading: true }
+  const params = tab === 'ALL' ? {} : { keirbanan: tab }
+  const [dashRes, sptRes, tlRes] = await Promise.all([
+    monitoring.fetchDashboard(params),
+    monitoring.fetchAlertSpt(params),
+    monitoring.fetchAlertTl(params)
+  ])
+  cache[key] = {
+    dashboard: dashRes,
+    alertSpt: sptRes || [],
+    alertTl: tlRes || [],
+    loading: false
+  }
 }
 
-watch(() => ui.tahunAktif, loadData)
-onMounted(loadData)
+watch(activeTab, (tab) => {
+  if (canAccess.value) loadTab(tab)
+})
+
+// Ganti tahun aktif dari sidebar -> muat ulang tab yang sedang dibuka
+// untuk tahun baru tersebut (cache tahun lama tetap tersimpan).
+watch(() => ui.tahunAktif, () => {
+  if (canAccess.value) loadTab(activeTab.value)
+})
+
+onMounted(() => {
+  if (canAccess.value) loadTab(activeTab.value)
+})
 </script>
+
+<style scoped>
+.tabs-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card, transparent);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+</style>

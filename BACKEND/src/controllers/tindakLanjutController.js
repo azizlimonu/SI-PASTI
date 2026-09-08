@@ -5,6 +5,7 @@ const {
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 const { Op } = require('sequelize');
+const { getKeirbanFilter } = require('../middleware/auth');
 
 // ═══════════════════════════════════════════
 // GET TL BY REKOMENDASI
@@ -501,6 +502,7 @@ const deleteTL = async (req, res) => {
 // HELPER — Update status rekomendasi otomatis
 // ═══════════════════════════════════════════
 const updateStatusRekomendasi = async (rekomendasi_id, transaction) => {
+  const rekomendasi = await Rekomendasi.findByPk(rekomendasi_id, { transaction });
   const semuaTL = await TindakLanjut.findAll({
     where: { rekomendasi_id },
     transaction
@@ -508,22 +510,25 @@ const updateStatusRekomendasi = async (rekomendasi_id, transaction) => {
 
   let statusBaru = 'Belum Ditindaklanjuti';
 
-  if (semuaTL.length > 0) {
+  if (rekomendasi.adalah_tgr) {
+    // Rekomendasi TGR (Ganti Rugi) — progress dihitung dari nilai yang
+    // sudah dibayar/terlunasi, bukan dari status_penerimaan TL.
+    const nilaiTemuan = parseFloat(rekomendasi.nilai_temuan || 0);
+    const nilaiTerlunasi = parseFloat(rekomendasi.nilai_terlunasi || 0);
+
+    if (nilaiTerlunasi > 0 && nilaiTemuan > 0 && nilaiTerlunasi >= nilaiTemuan) {
+      statusBaru = 'Selesai';
+    } else if (nilaiTerlunasi > 0 || semuaTL.length > 0) {
+      statusBaru = 'Dalam Proses';
+    } else {
+      statusBaru = 'Belum Ditindaklanjuti';
+    }
+  } else if (semuaTL.length > 0) {
+    // Rekomendasi administratif — progress dari status_penerimaan TL.
     const semuaDiterima = semuaTL.every(
       tl => tl.status_penerimaan === 'Diterima'
     );
-    const adaDiterima = semuaTL.some(
-      tl => tl.status_penerimaan === 'Diterima' ||
-        tl.status_penerimaan === 'Sebagian Diterima'
-    );
-
-    if (semuaDiterima) {
-      statusBaru = 'Selesai';
-    } else if (adaDiterima) {
-      statusBaru = 'Dalam Proses';
-    } else {
-      statusBaru = 'Dalam Proses';
-    }
+    statusBaru = semuaDiterima ? 'Selesai' : 'Dalam Proses';
   }
 
   await Rekomendasi.update(
@@ -552,11 +557,248 @@ const updateNilaiTerlunasi = async (rekomendasi_id, transaction) => {
   // Nanti bisa dikembangkan dengan input nilai per TL
 };
 
+// ═══════════════════════════════════════════
+// UPDATE PROGRESS REKOMENDASI (khusus Admin TL)
+// - nilai_terlunasi (TGR) -> status dihitung ulang otomatis
+// - status -> override manual, melewati perhitungan otomatis
+// ═══════════════════════════════════════════
+const updateProgressRekomendasi = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const { nilai_terlunasi, status } = req.body;
+    const user = req.user;
+
+    const rekomendasi = await Rekomendasi.findByPk(id, {
+      include: [{
+        model: Temuan, as: 'temuan',
+        include: [{
+          model: DokumenPenugasan, as: 'dokumen',
+          include: [{
+            model: Penugasan, as: 'penugasan',
+            include: [{ model: Pkpt, as: 'pkpt' }]
+          }]
+        }]
+      }],
+      transaction
+    });
+
+    if (!rekomendasi) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: 'Rekomendasi tidak ditemukan.'
+      });
+    }
+
+    const keirbanan = rekomendasi.temuan.dokumen.penugasan.pkpt.keirbanan;
+    if (user.keirbanan !== 'ALL' && user.keirbanan !== keirbanan) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
+      });
+    }
+
+    if (nilai_terlunasi !== undefined) {
+      if (!rekomendasi.adalah_tgr) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Nilai terlunasi hanya berlaku untuk rekomendasi TGR.'
+        });
+      }
+      await rekomendasi.update({ nilai_terlunasi }, { transaction });
+    }
+
+    if (status) {
+      // Override manual — set langsung, tidak lewat perhitungan otomatis
+      await Rekomendasi.update({ status }, { where: { id }, transaction });
+    } else {
+      // Tidak ada override -> hitung ulang otomatis (relevan kalau
+      // nilai_terlunasi baru saja diubah di atas)
+      await updateStatusRekomendasi(id, transaction);
+    }
+
+    await transaction.commit();
+
+    await writeLog(
+      user.id,
+      user.nama,
+      'Update Progress Rekomendasi',
+      'Rekomendasi',
+      rekomendasi.ditujukan_kepada,
+      keirbanan
+    );
+
+    const result = await Rekomendasi.findByPk(id);
+
+    return res.json({
+      success: true,
+      message: 'Progress rekomendasi berhasil diupdate.',
+      data: result
+    });
+  } catch (e) {
+    await transaction.rollback();
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
+// DAFTAR PENUGASAN YANG SUDAH ADA LHP TAPI
+// MASIH ADA REKOMENDASI BELUM SELESAI
+// ═══════════════════════════════════════════
+const getPenugasanNeedTL = async (req, res) => {
+  try {
+    const user = req.user;
+    const { tahun, keirbanan, search } = req.query;
+    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
+    if (tahun) pkptWhere.tahun = tahun;
+
+    const penugasanWhere = {};
+    if (search) penugasanWhere.nama_penugasan = { [Op.like]: `%${search}%` };
+
+    const penugasanList = await Penugasan.findAll({
+      where: penugasanWhere,
+      include: [
+        { model: Pkpt, as: 'pkpt', where: pkptWhere, attributes: ['id', 'tahun', 'keirbanan'] },
+        {
+          model: DokumenPenugasan, as: 'dokumens',
+          where: { jenis_dokumen: 'LHP' },
+          required: true,
+          attributes: ['id', 'judul_dokumen', 'created_at'],
+          include: [{
+            model: Temuan, as: 'temuans',
+            required: true,
+            attributes: ['id'],
+            include: [{
+              model: Rekomendasi, as: 'rekomendasis',
+              required: true,
+              where: { status: { [Op.ne]: 'Selesai' } },
+              attributes: ['id']
+            }]
+          }]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    const penugasanIds = penugasanList.map(p => p.id);
+    let rekap = {};
+
+    if (penugasanIds.length > 0) {
+      const rekapRaw = await Rekomendasi.findAll({
+        attributes: [
+          [sequelize.col('temuan.dokumen.penugasan_id'), 'penugasan_id'],
+          'status',
+          [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
+        ],
+        include: [{
+          model: Temuan, as: 'temuan', attributes: [],
+          include: [{
+            model: DokumenPenugasan, as: 'dokumen', attributes: [],
+            where: { penugasan_id: { [Op.in]: penugasanIds }, jenis_dokumen: 'LHP' }
+          }]
+        }],
+        group: ['temuan.dokumen.penugasan_id', 'status'],
+        raw: true
+      });
+
+      rekapRaw.forEach(r => {
+        const pid = r.penugasan_id;
+        if (!rekap[pid]) rekap[pid] = { belum: 0, dalam_proses: 0, selesai: 0 };
+        if (r.status === 'Belum Ditindaklanjuti') rekap[pid].belum = parseInt(r.total);
+        if (r.status === 'Dalam Proses') rekap[pid].dalam_proses = parseInt(r.total);
+        if (r.status === 'Selesai') rekap[pid].selesai = parseInt(r.total);
+      });
+    }
+
+    const result = penugasanList.map(p => ({
+      id: p.id,
+      nama_penugasan: p.nama_penugasan,
+      jenis_penugasan: p.jenis_penugasan,
+      pkpt: p.pkpt,
+      rekomendasi: rekap[p.id] || { belum: 0, dalam_proses: 0, selesai: 0 }
+    }));
+
+    return res.json({ success: true, data: result });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
+// DETAIL TL SATU PENUGASAN (Temuan -> Rekomendasi -> TL -> Bukti)
+// ═══════════════════════════════════════════
+const getPenugasanTLDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const penugasan = await Penugasan.findByPk(id, {
+      include: [
+        { model: Pkpt, as: 'pkpt' },
+        {
+          model: DokumenPenugasan, as: 'dokumens',
+          where: { jenis_dokumen: 'LHP' },
+          required: false,
+          include: [{
+            model: Temuan, as: 'temuans',
+            include: [{
+              model: Rekomendasi, as: 'rekomendasis',
+              include: [
+                { model: Pihak, as: 'pihak' },
+                {
+                  model: TindakLanjut, as: 'tindakLanjuts',
+                  include: [
+                    { model: BuktiTL, as: 'buktis', through: { attributes: [] } },
+                    { model: User, as: 'creator', attributes: ['id', 'nama'] }
+                  ]
+                }
+              ]
+            }]
+          }]
+        }
+      ]
+    });
+
+    if (!penugasan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Penugasan tidak ditemukan.'
+      });
+    }
+
+    if (user.keirbanan !== 'ALL' && user.keirbanan !== penugasan.pkpt.keirbanan) {
+      return res.status(403).json({
+        success: false,
+        message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
+      });
+    }
+
+    return res.json({ success: true, data: penugasan });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
 module.exports = {
   getTLByRekomendasi,
   getAllTL,
   createTL,
   createTLBatch,
   updateTL,
-  deleteTL
+  deleteTL,
+  updateProgressRekomendasi,
+  getPenugasanNeedTL,
+  getPenugasanTLDetail
 };

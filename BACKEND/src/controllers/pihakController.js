@@ -5,6 +5,7 @@ const {
 } = require('../models');
 const writeLog = require('../utils/writeLog');
 const { Op } = require('sequelize');
+const { getKeirbanFilter } = require('../middleware/auth');
 
 // ═══════════════════════════════════════════
 // GET ALL PIHAK
@@ -420,6 +421,7 @@ const deletePihak = async (req, res) => {
 const cekSKTJM = async (req, res) => {
   try {
     const { pihak_id, nip, nik, nama } = req.query;
+    const user = req.user;
 
     let pihak = null;
 
@@ -451,19 +453,12 @@ const cekSKTJM = async (req, res) => {
           model: Temuan,
           as: 'temuan',
           include: [{
-            model: DokumenPenugasan,
-            as: 'dokumen',
-            attributes: ['id', 'judul_dokumen', 'jenis_dokumen'],
             include: [{
-              model: Penugasan,
-              as: 'penugasan',
-              attributes: ['id', 'nama_penugasan'],
-              include: [{
-                model: Pkpt,
-                as: 'pkpt',
-                attributes: ['id', 'tahun', 'keirbanan']
-              }]
-            }]
+              model: Pkpt,
+              as: 'pkpt',
+              where: getKeirbanFilter(user),
+              attributes: ['id', 'tahun', 'keirbanan']
+            }],
           }]
         },
         {

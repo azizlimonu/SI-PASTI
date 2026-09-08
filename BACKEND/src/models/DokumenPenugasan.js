@@ -8,6 +8,7 @@ const DokumenPenugasan = sequelize.define('DokumenPenugasan', {
     type: DataTypes.ENUM('LHP', 'P2HP', 'Telaahan Awal', 'Kertas Kerja', 'Lainnya'),
     allowNull: false
   },
+  jenis_dokumen_lainnya: { type: DataTypes.STRING(100), allowNull: true },
   judul_dokumen: { type: DataTypes.STRING(255), allowNull: false },
   created_by: { type: DataTypes.INTEGER, allowNull: true },
   file_path: { type: DataTypes.STRING(500), allowNull: true },

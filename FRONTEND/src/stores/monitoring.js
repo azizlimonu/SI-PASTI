@@ -2,9 +2,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { monitoringService } from '@/services/monitoringService'
 import { useAuthStore } from './auth'
+import { useUIStore } from './ui'
 
 export const useMonitoringStore = defineStore('monitoring', () => {
   const auth = useAuthStore()
+  const ui = useUIStore()
 
   const dashboard = ref(null)
   const alertSpt = ref([])
@@ -19,7 +21,7 @@ export const useMonitoringStore = defineStore('monitoring', () => {
 
   // Tidak ada filter tahun — lintas tahun
   const baseParams = () => {
-    const params = {}
+    const params = { tahun: ui.tahunAktif }
     if (!auth.hasAllAccess) params.keirbanan = auth.keirbanan
     return params
   }
@@ -81,7 +83,10 @@ export const useMonitoringStore = defineStore('monitoring', () => {
   const fetchProgress = async (params = {}) => {
     loading.value = true
     try {
-      const res = await monitoringService.getProgress(params)
+      const res = await monitoringService.getProgress({
+        tahun: ui.tahunAktif,
+        ...params
+      })
       progress.value = res.data.data
       return res.data.data
     } catch (e) {
@@ -95,8 +100,11 @@ export const useMonitoringStore = defineStore('monitoring', () => {
   const fetchLog = async (params = {}) => {
     loading.value = true
     try {
+      // Log tidak berelasi ke tahun PKPT, jadi tahun tidak dikirim di sini
+      const { keirbanan } = baseParams()
+      const filterKeirbanan = keirbanan ? { keirbanan } : {}
       const res = await monitoringService.getLog({
-        ...baseParams(),
+        ...filterKeirbanan,
         page: logPagination.value.page,
         limit: logPagination.value.limit,
         ...params

@@ -25,11 +25,14 @@ export const useUIStore = defineStore('ui', () => {
   const tahunAktif = ref(
     parseInt(localStorage.getItem('sipasti_tahun_aktif')) || currentYear
   )
-
   const setTahunAktif = (tahun) => {
     tahunAktif.value = tahun
     localStorage.setItem('sipasti_tahun_aktif', tahun)
   }
 
-  return { isDark, toggleTheme, tahunAktif, setTahunAktif }
+  // Daftar tahun yang bisa dipilih di seluruh aplikasi — satu sumber
+  // agar konsisten (sidebar, form PKPT, dashboard, dll).
+  const daftarTahun = Array.from({ length: 5 }, (_, i) => currentYear + 1 - i)
+
+  return { isDark, toggleTheme, tahunAktif, setTahunAktif, daftarTahun }
 })

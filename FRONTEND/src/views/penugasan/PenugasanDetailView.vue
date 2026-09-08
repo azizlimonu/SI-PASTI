@@ -354,7 +354,7 @@
                 >
                   <span
                     :class="`badge badge-${jenisColor(dok.jenis_dokumen)}`"
-                    >{{ dok.jenis_dokumen }}</span
+                    >{{ dok.jenis_dokumen === 'Lainnya' && dok.jenis_dokumen_lainnya ? dok.jenis_dokumen_lainnya : dok.jenis_dokumen }}</span
                   >
                   <span
                     style="font-size:0.72rem; color:var(--text-muted);"

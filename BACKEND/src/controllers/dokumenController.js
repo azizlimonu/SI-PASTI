@@ -138,7 +138,7 @@ const createDokumen = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const {
-      penugasan_id, jenis_dokumen, judul_dokumen,
+      penugasan_id, jenis_dokumen, jenis_dokumen_lainnya, judul_dokumen,
       link_dokumen, temuan
     } = req.body;
     const user = req.user;
@@ -148,6 +148,14 @@ const createDokumen = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Penugasan, jenis dokumen, dan judul dokumen wajib diisi.'
+      });
+    }
+
+    if (jenis_dokumen === 'Lainnya' && !jenis_dokumen_lainnya) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Nama jenis dokumen wajib diisi kalau jenis dokumen "Lainnya".'
       });
     }
 
@@ -186,6 +194,7 @@ const createDokumen = async (req, res) => {
     const dokumen = await DokumenPenugasan.create({
       penugasan_id,
       jenis_dokumen,
+      jenis_dokumen_lainnya: jenis_dokumen === 'Lainnya' ? jenis_dokumen_lainnya : null,
       judul_dokumen,
       file_path: req.file ? req.file.path : null,
       link_dokumen: link_dokumen || null,
@@ -271,7 +280,7 @@ const createDokumen = async (req, res) => {
 // ═══════════════════════════════════════════
 const updateDokumen = async (req, res) => {
   try {
-    const { judul_dokumen, link_dokumen } = req.body;
+    const { judul_dokumen, link_dokumen, jenis_dokumen_lainnya } = req.body;
     const user = req.user;
 
     const dokumen = await DokumenPenugasan.findByPk(req.params.id, {
@@ -305,7 +314,10 @@ const updateDokumen = async (req, res) => {
     await dokumen.update({
       judul_dokumen: judul_dokumen || dokumen.judul_dokumen,
       file_path: req.file ? req.file.path : dokumen.file_path,
-      link_dokumen: link_dokumen !== undefined ? link_dokumen : dokumen.link_dokumen
+      link_dokumen: link_dokumen !== undefined ? link_dokumen : dokumen.link_dokumen,
+      jenis_dokumen_lainnya: dokumen.jenis_dokumen === 'Lainnya' && jenis_dokumen_lainnya !== undefined
+        ? jenis_dokumen_lainnya
+        : dokumen.jenis_dokumen_lainnya
     });
 
     await writeLog(

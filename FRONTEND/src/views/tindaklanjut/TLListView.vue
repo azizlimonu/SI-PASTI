@@ -3,194 +3,204 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Tindak Lanjut</h1>
-        <p class="page-subtitle">Daftar Tindak Lanjut</p>
+        <p class="page-subtitle">
+          Penugasan sudah ada LHP, belum tuntas TL — {{ scopeLabel }} — Tahun
+          {{ ui.tahunAktif }}
+        </p>
       </div>
     </div>
 
-    <!-- Filter & Search -->
+    <!-- Tabs (khusus role ber-akses ALL: superadmin, inspektur, admin_tl) -->
+    <div v-if="auth.hasAllAccess" class="tabs-bar">
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        :class="['tab-btn', { active: activeTab === tab.key }]"
+        @click="activeTab = tab.key"
+      >
+        <span
+          v-if="tab.key !== 'ALL'"
+          class="tab-dot"
+          :style="{ backgroundColor: keirbanHexMap[tab.key] }"
+        ></span>
+        {{ tab.label }}
+      </button>
+    </div>
+
+    <div class="glass-card" style="padding:0.75rem 1rem; margin-bottom:1rem;">
+      <input
+        v-model="search"
+        type="text"
+        class="input-field"
+        placeholder="Cari nama penugasan..."
+        style="max-width:320px;"
+        @input="debouncedSearch"
+      />
+    </div>
+
     <div
+      v-if="loading"
       class="glass-card"
-      style="padding:1rem; margin-bottom:1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;"
+      style="padding:2rem; text-align:center;"
     >
-      <div style="position:relative; flex:1; min-width:200px;">
-        <input
-          v-model="search"
-          type="text"
-          class="input-field"
-          placeholder="Cari uraian TL, rekomendasi, temuan, atau penugasan..."
-          @input="handleSearch"
-        />
-      </div>
-
-      <select
-        v-model="filterStatusPenerimaan"
-        class="select-field"
-        style="width:170px;"
-        @change="loadData"
-      >
-        <option value="">Semua Status TL</option>
-        <option v-for="s in STATUS_PENERIMAAN" :key="s" :value="s">
-          {{ s }}
-        </option>
-      </select>
-
-      <select
-        v-model="filterStatusRekomendasi"
-        class="select-field"
-        style="width:180px;"
-        @change="loadData"
-      >
-        <option value="">Semua Status Rekomendasi</option>
-        <option v-for="s in STATUS_REKOMENDASI" :key="s" :value="s">
-          {{ s }}
-        </option>
-      </select>
-
-      <select
-        v-if="auth.hasAllAccess"
-        v-model="filterKeirbanan"
-        class="select-field"
-        style="width:160px;"
-        @change="loadData"
-      >
-        <option value="">Semua Keirbanan</option>
-        <option v-for="kb in KEIRBANAN" :key="kb" :value="kb">
-          Keirbanan {{ kb }}
-        </option>
-      </select>
+      <span class="loading-spinner"></span>
     </div>
 
-    <!-- Table -->
-    <div class="glass-card">
-      <div
-        v-if="tlStore.loading"
-        style="padding:3rem; display:flex; justify-content:center;"
-      >
-        <span class="loading-spinner"></span>
-      </div>
+    <div
+      v-else-if="!penugasanList.length"
+      class="glass-card empty-state"
+      style="padding:2rem;"
+    >
+      <p style="font-size:0.9rem;">
+        Tidak ada penugasan yang perlu tindak lanjut untuk tahun/keirbanan ini.
+        🎉
+      </p>
+    </div>
 
-      <div v-else-if="!tlStore.list.length" class="empty-state">
-        <p style="font-weight:500; color:var(--text-secondary);">
-          Belum ada tindak lanjut
-        </p>
-        <p style="font-size:0.8rem;">
-          Tidak ada data tindak lanjut yang sesuai filter.
-        </p>
-      </div>
-
-      <div v-else class="table-wrapper" style="border:none; border-radius:0;">
-        <table class="table-base">
-          <colgroup>
-            <col style="width:40px;" />
-            <col v-if="auth.hasAllAccess" style="width:110px;" />
-            <col style="width:26%;" />
-            <col style="width:14%;" />
-            <col style="width:14%;" />
-            <col style="width:110px;" />
-            <col style="width:16%;" />
-            <col style="width:95px;" />
-            <col style="width:110px;" />
-            <col style="width:70px;" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th v-if="auth.hasAllAccess">Keirbanan</th>
-              <th>Penugasan</th>
-              <th>Temuan</th>
-              <th>Rekomendasi</th>
-              <th>Status Rekomendasi</th>
-              <th>Uraian TL</th>
-              <th>Tanggal TL</th>
-              <th>Status TL</th>
-              <th>Bukti</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(tl, i) in tlStore.list" :key="tl.id">
-              <td style="color:var(--text-muted); font-size:0.8rem;">
-                {{ i + 1 }}
-              </td>
-              <td v-if="auth.hasAllAccess">
-                <span
-                  :class="`badge badge-${BADGE_COLOR[tl.rekomendasi?.temuan?.dokumen?.penugasan?.pkpt?.keirbanan] || 'gray'}`"
-                >
-                  Keirbanan
-                  {{ tl.rekomendasi?.temuan?.dokumen?.penugasan?.pkpt?.keirbanan }}
-                </span>
-              </td>
-              <td>
-                <RouterLink
-                  :to="`/penugasan/${tl.rekomendasi?.temuan?.dokumen?.penugasan?.id}`"
-                  style="color:var(--accent); text-decoration:none; font-weight:500; font-size:0.82rem;"
-                >
-                  {{ tl.rekomendasi?.temuan?.dokumen?.penugasan?.nama_penugasan }}
-                </RouterLink>
-              </td>
-              <td style="font-size:0.8rem;">
-                {{ tl.rekomendasi?.temuan?.judul_temuan }}
-              </td>
-              <td style="font-size:0.8rem;">
-                {{ tl.rekomendasi?.ditujukan_kepada }}
-              </td>
-              <td>
-                <span
-                  :class="`badge badge-${statusRekomendasiColor(tl.rekomendasi?.status)}`"
-                  style="font-size:0.68rem;"
-                >
-                  {{ tl.rekomendasi?.status }}
-                </span>
-              </td>
-              <td style="font-size:0.8rem;">{{ tl.uraian_tl }}</td>
-              <td style="font-size:0.8rem; white-space:nowrap;">
-                {{ formatDate(tl.tanggal_tl) }}
-              </td>
-              <td>
-                <span
-                  :class="`badge badge-${statusPenerimaanColor(tl.status_penerimaan)}`"
-                >
-                  {{ tl.status_penerimaan }}
-                </span>
-              </td>
-              <td style="font-size:0.8rem;">{{ tl.buktis?.length || 0 }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div v-else class="glass-card table-wrapper">
+      <table class="table-base">
+        <thead>
+          <tr>
+            <th>Nama Penugasan</th>
+            <th>Jenis</th>
+            <th v-if="showKeirbananColumn">Keirbanan</th>
+            <th>Belum TL</th>
+            <th>Proses TL</th>
+            <th>Selesai</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in penugasanList" :key="p.id">
+            <td style="font-weight:500;">{{ p.nama_penugasan }}</td>
+            <td style="font-size:0.78rem; color:var(--text-secondary);">
+              {{ p.jenis_penugasan }}
+            </td>
+            <td v-if="showKeirbananColumn">
+              <span
+                :class="`badge badge-${BADGE_COLOR[p.pkpt?.keirbanan] || 'gray'}`"
+                >{{ p.pkpt?.keirbanan }}</span
+              >
+            </td>
+            <td>
+              <span class="badge badge-red">{{ p.rekomendasi.belum }}</span>
+            </td>
+            <td>
+              <span
+                class="badge badge-yellow"
+                >{{ p.rekomendasi.dalam_proses }}</span
+              >
+            </td>
+            <td>
+              <span class="badge badge-green">{{ p.rekomendasi.selesai }}</span>
+            </td>
+            <td>
+              <RouterLink
+                :to="`/tindak-lanjut/${p.id}`"
+                class="btn-secondary"
+                style="font-size:0.75rem; padding:0.35rem 0.75rem;"
+              >
+                Kelola TL →
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useTindakLanjutStore } from '@/stores/tindaklanjut'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { formatDate, statusRekomendasiColor, statusPenerimaanColor } from '@/utils/format'
-import { KEIRBANAN, BADGE_COLOR, STATUS_PENERIMAAN, STATUS_REKOMENDASI } from '@/utils/constants'
+import { useUIStore } from '@/stores/ui'
+import { useTindakLanjutStore } from '@/stores/tindaklanjut'
+import { KEIRBANAN, BADGE_COLOR } from '@/utils/constants'
 
-const tlStore = useTindakLanjutStore()
 const auth = useAuthStore()
+const ui = useUIStore()
+const tindaklanjut = useTindakLanjutStore()
 
+const loading = ref(false)
+const penugasanList = ref([])
 const search = ref('')
-const filterStatusPenerimaan = ref('')
-const filterStatusRekomendasi = ref('')
-const filterKeirbanan = ref('')
+const activeTab = ref('ALL')
+
+const tabs = [
+  { key: 'ALL', label: 'Total (Seluruh Keirbanan)' },
+  ...KEIRBANAN.map((kb) => ({ key: kb, label: `Keirbanan ${kb}` }))
+]
+
+const keirbanHexMap = { I: '#3b82f6', II: '#10b981', III: '#f59e0b', IV: '#8b5cf6', V: '#ef4444' }
+
+const showKeirbananColumn = computed(() => auth.hasAllAccess && activeTab.value === 'ALL')
+
+const scopeLabel = computed(() => {
+  if (!auth.hasAllAccess) return `Keirbanan ${auth.user?.keirbanan}`
+  return activeTab.value === 'ALL' ? 'Seluruh Keirbanan' : `Keirbanan ${activeTab.value}`
+})
 
 let searchTimeout = null
-
-const loadData = () => {
-  tlStore.fetchAll({
-    search: search.value || undefined,
-    status_penerimaan: filterStatusPenerimaan.value || undefined,
-    status: filterStatusRekomendasi.value || undefined,
-    keirbanan: filterKeirbanan.value || undefined
-  })
-}
-
-const handleSearch = () => {
+const debouncedSearch = () => {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(loadData, 400)
 }
 
+const loadData = async () => {
+  loading.value = true
+  const params = { tahun: ui.tahunAktif }
+  if (search.value) params.search = search.value
+  if (auth.hasAllAccess && activeTab.value !== 'ALL') params.keirbanan = activeTab.value
+  const res = await tindaklanjut.fetchPenugasanList(params)
+  penugasanList.value = res
+  loading.value = false
+}
+
 onMounted(loadData)
+watch(() => ui.tahunAktif, loadData)
+watch(activeTab, loadData)
 </script>
+
+<style scoped>
+.tabs-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+</style>

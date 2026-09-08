@@ -422,13 +422,9 @@ const roleLabel = computed(() => {
 })
 
 // === Ganti Tahun PKPT ====
+// === Ganti Tahun PKPT ====
 const showTahunModal = ref(false)
-
-const currentYear = new Date().getFullYear()
-const daftarTahun = Array.from(
-  { length: 5 },
-  (_, i) => currentYear + 1 - i
-)
+const daftarTahun = ui.daftarTahun
 
 const gantiTahun = (tahun) => {
   if (ui.tahunAktif === tahun) {

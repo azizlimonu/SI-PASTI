@@ -249,20 +249,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import { useMonitoringStore } from '@/stores/monitoring'
 import { useUIStore } from '@/stores/ui'
+import { useMonitoringStore } from '@/stores/monitoring'
 import StatCard from '@/components/dashboard/StatCard.vue'
-import PenugasanBreakdownTable from '@/components/dashboard/PenugasanBreakdownTable.vue'
-import AlertPanel from '@/components/dashboard/AlertPanel.vue'
-import { formatRupiah } from '@/utils/format'
+import { formatRupiah, formatDate } from '@/utils/format'
+import { BADGE_COLOR } from '@/utils/constants'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
-const monitoring = useMonitoringStore()
 const ui = useUIStore()
+const monitoring = useMonitoringStore()
 
 const loading = ref(false)
 const loadingTable = ref(false)
@@ -273,6 +272,12 @@ const tgrProgress = computed(() => {
   const total = dashboard.value?.tgr?.total_nilai || 0
   const lun = dashboard.value?.tgr?.total_terlunasi || 0
   return total > 0 ? Math.round((lun / total) * 100) : 0
+})
+
+const hasBacklog = computed(() => {
+  const b = dashboard.value?.backlog
+  if (!b) return false
+  return (b.rekomendasi_belum_tl || 0) > 0 || (b.rekomendasi_proses_tl || 0) > 0
 })
 
 const jenisPersen = computed(() => {
@@ -332,10 +337,20 @@ const loadData = async () => {
 }
 
 onMounted(loadData)
+
+<!-- // Reload otomatis saat tahun aktif diganti dari sidebar. -->
+watch(() => ui.tahunAktif, loadData)
 </script>
 
 <style scoped>
 .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.25rem; }
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.card-title { font-size:0.875rem; font-weight:600; color:var(--text-primary); margin:0 0 0.75rem; }
+.progress-track { height:6px; background:var(--bg-hover); border-radius:9999px; overflow:hidden; }
+.backlog-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+.backlog-item { display:flex; flex-direction:column; gap:0.25rem; padding:0.75rem; border-radius:0.6rem; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); }
+.backlog-value { font-size:1.5rem; font-weight:700; color:#f59e0b; }
+.backlog-label { font-size:0.72rem; color:var(--text-secondary); }
 .widgets-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
 .widgets-grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1rem; align-items: start; }
 .card-title { font-size:0.875rem; font-weight:600; color:var(--text-primary); margin:0 0 0.75rem; }

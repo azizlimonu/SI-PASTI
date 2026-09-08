@@ -1,10 +1,10 @@
-POST /api/auth/login                    ok
-POST /api/auth/change-password          ok
-GET /api/auth/profile                   ok
+POST /api/auth/login ok
+POST /api/auth/change-password ok
+GET /api/auth/profile ok
 POST /api/auth/create-user
 
-GET /api/users                          ok
-GET /api/users/:id                      ok
+GET /api/users ok
+GET /api/users/:id ok
 PUT /api/users/:id
 PATCH /api/users/:id/nonaktifkan
 PATCH /api/users/:id/aktifkan
@@ -64,8 +64,8 @@ PUT /api/pihak/:id
 DELETE /api/pihak/:id
 GET /api/pihak/sktjm
 
-GET /api/monitoring/dashboard
-GET /api/monitoring/alert/spt
-GET /api/monitoring/alert/tl
+GET /api/monitoring/dashboard?tahun=&keirbanan=
+GET /api/monitoring/alert/spt?tahun=&keirbanan=
+GET /api/monitoring/alert/tl?tahun=&keirbanan=
 GET /api/monitoring/progress
 GET /api/monitoring/log

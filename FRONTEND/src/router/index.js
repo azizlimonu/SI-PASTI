@@ -55,6 +55,11 @@ const router = createRouter({
           component: () => import('@/views/tindaklanjut/TLListView.vue')
         },
         {
+          path: 'tindak-lanjut/:id',
+          name: 'tindak-lanjut-detail',
+          component: () => import('@/views/tindaklanjut/TLDetailView.vue')
+        },
+        {
           path: 'monitoring',
           name: 'monitoring',
           component: () => import('@/views/monitoring/MonitoringView.vue')
@@ -68,6 +73,11 @@ const router = createRouter({
           path: 'pihak',
           name: 'pihak',
           component: () => import('@/views/pihak/PihakListView.vue')
+        },
+        {
+          path: 'pihak/:id',
+          name: 'pihak-detail',
+          component: () => import('@/views/pihak/PihakDetailView.vue')
         },
         {
           path: 'pihak/:id',

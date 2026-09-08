@@ -3,21 +3,11 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Dashboard Inspektur</h1>
-        <p class="page-subtitle">Semua Keirbanan — Tahun {{ filterTahun }}</p>
+        <p class="page-subtitle">
+          Seluruh Keirbanan — Tahun {{ ui.tahunAktif }}
+        </p>
       </div>
-      <div style="display:flex; align-items:center; gap:0.75rem;">
-        <select
-          v-model="filterTahun"
-          class="select-field"
-          style="width:120px;"
-          @change="loadData"
-        >
-          <option v-for="t in ui.daftarTahun" :key="t" :value="t">
-            {{ t }}
-          </option>
-        </select>
-        <span class="badge badge-purple">Inspektur</span>
-      </div>
+      <span class="badge badge-purple">Inspektur</span>
     </div>
 
     <!-- Stat Cards (ringkasan awal saja) -->
@@ -127,8 +117,21 @@
     </div>
 
     <!-- Progress Per Keirbanan -->
+    <!-- Progress Per Keirbanan -->
     <div class="glass-card" style="padding:1.25rem; margin-bottom:1.25rem;">
-      <h3 class="card-title">Progress Penugasan per Keirbanan</h3>
+      <div
+        style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;"
+      >
+        <h3 class="card-title" style="margin:0;">
+          Progress Penugasan per Keirbanan
+        </h3>
+        <RouterLink
+          to="/monitoring"
+          style="font-size:0.78rem; color:var(--accent); text-decoration:none;"
+        >
+          Lihat detail per keirbanan →
+        </RouterLink>
+      </div>
       <div v-if="loading" class="chart-loading">
         <span class="loading-spinner"></span>
       </div>
@@ -244,23 +247,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useUIStore } from '@/stores/ui'
 import { useMonitoringStore } from '@/stores/monitoring'
 import StatCard from '@/components/dashboard/StatCard.vue'
-import PenugasanBreakdownTable from '@/components/dashboard/PenugasanBreakdownTable.vue'
-import AlertPanel from '@/components/dashboard/AlertPanel.vue'
 import { formatRupiah } from '@/utils/format'
 
 const ui = useUIStore()
 const monitoring = useMonitoringStore()
 
 const loading = ref(false)
-const loadingTable = ref(false)
 const dashboard = ref(null)
-const alertSpt = ref([])
 const progressData = ref([])
-const filterTahun = ref(new Date().getFullYear())
 
 const keirbanColors = { I: 'blue', II: 'green', III: 'yellow', IV: 'purple', V: 'red' }
 const keirbanHexMap = { I: '#3b82f6', II: '#10b981', III: '#f59e0b', IV: '#8b5cf6', V: '#ef4444' }
@@ -275,22 +273,19 @@ const tgrPersen = (kb) => {
 
 const loadData = async () => {
   loading.value = true
-  loadingTable.value = true
-  const [dashRes, progRes, sptRes] = await Promise.all([
-    monitoring.fetchDashboard({ tahun: filterTahun.value }),
-    monitoring.fetchProgress({ tahun: filterTahun.value }),
-    monitoring.fetchAlertSpt(),
-    monitoring.fetchAlertTl(),
-    monitoring.fetchTable({ tahun: filterTahun.value })
+  const [dashRes, progRes] = await Promise.all([
+    monitoring.fetchDashboard(),
+    monitoring.fetchProgress()
   ])
   dashboard.value = dashRes
   progressData.value = progRes || []
-  alertSpt.value = sptRes || []
   loading.value = false
-  loadingTable.value = false
 }
 
 onMounted(loadData)
+
+// Reload otomatis saat tahun aktif diganti dari sidebar.
+watch(() => ui.tahunAktif, loadData)
 </script>
 
 <style scoped>

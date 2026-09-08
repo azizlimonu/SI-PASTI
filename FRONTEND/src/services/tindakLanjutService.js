@@ -5,6 +5,18 @@ export const tindakLanjutService = {
   getAll: (params = {}) =>
     api.get('/tindak-lanjut', { params }),
 
+  // Daftar Penugasan yang sudah ada LHP tapi masih ada rekomendasi
+  // belum selesai TL-nya
+  getPenugasanNeedTL: (params = {}) =>
+    api.get('/tindak-lanjut/penugasan', { params }),
+
+  getPenugasanDetail: (penugasanId) =>
+    api.get(`/tindak-lanjut/penugasan/${penugasanId}`),
+
+  // Update nilai_terlunasi (TGR) dan/atau override status manual
+  updateProgress: (rekomendasiId, data) =>
+    api.patch(`/tindak-lanjut/rekomendasi/${rekomendasiId}/progress`, data),
+
   getByRekomendasi: (rekomendasiId, params = {}) =>
     api.get(`/tindak-lanjut/rekomendasi/${rekomendasiId}`, { params }),
 

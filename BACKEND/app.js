@@ -31,6 +31,7 @@ const buktiTLRoutes = require('./src/routes/buktiTLRoutes');
 const tindakLanjutRoutes = require('./src/routes/tindakLanjutRoutes');
 const pihakRoutes = require('./src/routes/pihakRoutes');
 const monitoringRoutes = require('./src/routes/monitoringRoutes');
+const pengaturanRoutes = require('./src/routes/pengaturanRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -42,6 +43,7 @@ app.use('/api/bukti', buktiTLRoutes);
 app.use('/api/tindak-lanjut', tindakLanjutRoutes);
 app.use('/api/pihak', pihakRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/pengaturan', pengaturanRoutes);
 
 // Static files untuk akses file upload
 app.use('/uploads', express.static('uploads'));
