@@ -366,7 +366,7 @@
             <div style="display:flex; gap:0.5rem; align-items:center;">
               <a
                 v-if="dok.file_path"
-                :href="`http://localhost:3000/${dok.file_path}`"
+                :href="`http://localhost:8000/${dok.file_path}`"
                 download
                 class="btn-icon"
               >

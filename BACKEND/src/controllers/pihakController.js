@@ -420,14 +420,24 @@ const deletePihak = async (req, res) => {
 // ═══════════════════════════════════════════
 const cekSKTJM = async (req, res) => {
   try {
-    const { pihak_id, nip, nik, nama } = req.query;
-    const user = req.user;
+    const { pihak_id, nip, nik, nama, q } = req.query;
 
     let pihak = null;
 
     // Cari pihak berdasarkan parameter
     if (pihak_id) {
       pihak = await Pihak.findByPk(pihak_id);
+    } else if (q) {
+      // 1 kotak pencarian gabungan — coba cocokkan ke NIP, NIK, atau nama
+      pihak = await Pihak.findOne({
+        where: {
+          [Op.or]: [
+            { nip: q },
+            { nik: q },
+            { nama: { [Op.like]: `%${q}%` } }
+          ]
+        }
+      });
     } else if (nip) {
       pihak = await Pihak.findOne({ where: { nip } });
     } else if (nik) {

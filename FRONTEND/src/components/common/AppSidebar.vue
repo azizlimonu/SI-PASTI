@@ -3,9 +3,17 @@
     <!-- ═══ HEADER ═══ -->
     <div class="sidebar-header">
       <div class="sidebar-logo">
-        <img :src="logoSrc" alt="Logo SI PASTI" class="sidebar-logo-img" />
+        <img
+          :src="dynamicLogoSrc"
+          alt="Logo Instansi"
+          class="sidebar-logo-img"
+        />
         <Transition name="fade-text">
-          <span v-if="!isCollapsed" class="sidebar-app-name">SI PASTI</span>
+          <span
+            v-if="!isCollapsed"
+            class="sidebar-app-name"
+            >{{ dynamicAppName }}</span
+          >
         </Transition>
       </div>
       <button
@@ -398,16 +406,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed , onMounted} from 'vue'
+import { useRoute,useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
 import logoSrc from '@/assets/images/logo.png'
+import { usePengaturanStore } from '@/stores/pengaturan'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const ui = useUIStore()
 const isCollapsed = ref(false)
+
+const pengaturan = usePengaturanStore()
+const fileBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || ''
 
 // ═══ ROLE LABEL ═══
 const roleLabel = computed(() => {
@@ -421,7 +434,6 @@ const roleLabel = computed(() => {
   return labels[auth.user?.role] || auth.user?.role
 })
 
-// === Ganti Tahun PKPT ====
 // === Ganti Tahun PKPT ====
 const showTahunModal = ref(false)
 const daftarTahun = ui.daftarTahun
@@ -459,6 +471,18 @@ const showMenu = (menu) => {
 
   return rules[menu] ?? false
 }
+
+const dynamicAppName = computed(() => pengaturan.data?.nama_aplikasi || 'SI PASTI')
+const dynamicLogoSrc = computed(() => {
+  if (pengaturan.data?.logo_path) {
+    return `${fileBaseUrl}/${pengaturan.data.logo_path.replace(/\\/g, '/')}`
+  }
+  return logoSrc
+})
+
+onMounted(() => {
+  if (!pengaturan.data) pengaturan.fetch()
+})
 </script>
 
 <style scoped>

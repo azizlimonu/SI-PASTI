@@ -41,6 +41,9 @@ export const dokumenService = {
   delete: (id) =>
     api.delete(`/dokumen/${id}`),
 
+  download: (id) =>
+    api.get(`/dokumen/${id}/download`, { responseType: 'blob' }),
+
   // Temuan
   getTemuanByDokumen: (dokumenId, params = {}) =>
     api.get(`/dokumen/${dokumenId}/temuan`, { params }),
@@ -83,5 +86,8 @@ export const dokumenService = {
   },
 
   getSetoranByRekomendasi: (rekomendasiId) =>
-    api.get(`/dokumen/rekomendasi/${rekomendasiId}/setoran`)
+    api.get(`/dokumen/rekomendasi/${rekomendasiId}/setoran`),
+
+  downloadSetoran: (id) =>
+    api.get(`/dokumen/setoran/${id}/download`, { responseType: 'blob' })
 }
