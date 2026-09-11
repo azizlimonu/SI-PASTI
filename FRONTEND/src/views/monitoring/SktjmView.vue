@@ -56,6 +56,50 @@
       </div>
     </div>
 
+    <!-- Lebih dari 1 kandidat cocok — user pilih dulu -->
+    <div
+      v-else-if="pihak.sktjmCandidates.length"
+      class="glass-card"
+      style="padding:1.25rem;"
+    >
+      <p
+        style="font-size:0.82rem; color:var(--text-secondary); margin:0 0 1rem;"
+      >
+        Ditemukan {{ pihak.sktjmCandidates.length }} pihak yang cocok dengan "{{ lastKeyword
+        }}". Pilih salah satu:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <button
+          v-for="c in pihak.sktjmCandidates"
+          :key="c.id"
+          class="candidate-item"
+          @click="pilihKandidat(c)"
+        >
+          <div style="text-align:left;">
+            <p
+              style="font-size:0.85rem; font-weight:600; color:var(--text-primary); margin:0;"
+            >
+              {{ c.nama }}
+            </p>
+            <p
+              style="font-size:0.75rem; color:var(--text-muted); margin:0.15rem 0 0;"
+            >
+              {{ c.nip ? `NIP: ${c.nip}` : (c.nik ? `NIK: ${c.nik}` : '') }}
+              <span v-if="c.jabatan"> — {{ c.jabatan }}</span>
+              <span v-if="c.instansi_perusahaan">
+                — {{ c.instansi_perusahaan }}</span
+              >
+            </p>
+          </div>
+          <span
+            :class="`badge badge-${BADGE_COLOR[c.jenis_pihak] || 'gray'}`"
+            style="font-size:0.68rem;"
+            >{{ c.jenis_pihak }}</span
+          >
+        </button>
+      </div>
+    </div>
+
     <div
       v-else-if="result"
       style="display:flex; flex-direction:column; gap:1rem;"
@@ -141,6 +185,8 @@
             <thead>
               <tr>
                 <th>Penugasan</th>
+                <th>Tahun</th>
+                <th>Keirbanan</th>
                 <th>Uraian Rekomendasi</th>
                 <th>Nilai</th>
                 <th>Sisa</th>
@@ -150,9 +196,13 @@
             </thead>
             <tbody>
               <tr v-for="t in result.temuan_aktif.tgr" :key="t.rekomendasi_id">
-                <td style="font-size:0.78rem;">
-                  {{ t.penugasan }} ({{ t.tahun_pkpt }}, Keirbanan
-                  {{ t.keirbanan }})
+                <td style="font-size:0.78rem;">{{ t.penugasan }}</td>
+                <td style="font-size:0.78rem;">{{ t.tahun_pkpt }}</td>
+                <td>
+                  <span
+                    :class="`badge badge-${BADGE_COLOR[t.keirbanan] || 'gray'}`"
+                    >{{ t.keirbanan }}</span
+                  >
                 </td>
                 <td style="font-size:0.78rem;">{{ t.uraian_rekomendasi }}</td>
                 <td style="font-size:0.78rem;">
@@ -194,6 +244,8 @@
             <thead>
               <tr>
                 <th>Penugasan</th>
+                <th>Tahun</th>
+                <th>Keirbanan</th>
                 <th>Uraian Rekomendasi</th>
                 <th>Batas Waktu</th>
                 <th>Status</th>
@@ -204,9 +256,13 @@
                 v-for="t in result.temuan_aktif.administratif"
                 :key="t.rekomendasi_id"
               >
-                <td style="font-size:0.78rem;">
-                  {{ t.penugasan }} ({{ t.tahun_pkpt }}, Keirbanan
-                  {{ t.keirbanan }})
+                <td style="font-size:0.78rem;">{{ t.penugasan }}</td>
+                <td style="font-size:0.78rem;">{{ t.tahun_pkpt }}</td>
+                <td>
+                  <span
+                    :class="`badge badge-${BADGE_COLOR[t.keirbanan] || 'gray'}`"
+                    >{{ t.keirbanan }}</span
+                  >
                 </td>
                 <td style="font-size:0.78rem;">{{ t.uraian_rekomendasi }}</td>
                 <td style="font-size:0.78rem;">
@@ -240,15 +296,21 @@
             <thead>
               <tr>
                 <th>Penugasan</th>
+                <th>Tahun</th>
+                <th>Keirbanan</th>
                 <th>Uraian Rekomendasi</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="t in result.temuan_selesai" :key="t.rekomendasi_id">
-                <td style="font-size:0.78rem;">
-                  {{ t.penugasan }} ({{ t.tahun_pkpt }}, Keirbanan
-                  {{ t.keirbanan }})
+                <td style="font-size:0.78rem;">{{ t.penugasan }}</td>
+                <td style="font-size:0.78rem;">{{ t.tahun_pkpt }}</td>
+                <td>
+                  <span
+                    :class="`badge badge-${BADGE_COLOR[t.keirbanan] || 'gray'}`"
+                    >{{ t.keirbanan }}</span
+                  >
                 </td>
                 <td style="font-size:0.78rem;">{{ t.uraian_rekomendasi }}</td>
                 <td>
@@ -264,10 +326,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePihakStore } from '@/stores/pihak'
 import { formatDate, formatRupiah, statusRekomendasiColor } from '@/utils/format'
+import { BADGE_COLOR } from '@/utils/constants'
 
+const route = useRoute()
 const pihak = usePihakStore()
 
 const keyword = ref('')
@@ -275,13 +340,29 @@ const lastKeyword = ref('')
 const searched = ref(false)
 
 const result = computed(() => pihak.sktjmResult)
-const notFound = computed(() => searched.value && !pihak.loadingSktjm && !result.value)
+const notFound = computed(() =>
+  searched.value && !pihak.loadingSktjm && !result.value && !pihak.sktjmCandidates.length
+)
 
 const handleSearch = async () => {
   if (!keyword.value.trim()) return
   searched.value = true
   lastKeyword.value = keyword.value
-  await pihak.cekSktjm({ q: keyword.value.trim() })
+  await pihak.cariSktjm(keyword.value.trim())
+}
+
+// Dibuka lewat link "Cek SKTJM" dari halaman Pihak (?pihak_id=X di URL)
+// -> langsung tampilkan detail, tidak perlu cari manual lagi.
+onMounted(async () => {
+  if (route.query.pihak_id) {
+    searched.value = true
+    lastKeyword.value = ''
+    await pihak.cekSktjm({ pihak_id: route.query.pihak_id })
+  }
+})
+
+const pilihKandidat = async (c) => {
+  await pihak.cekSktjm({ pihak_id: c.id })
 }
 
 const doPrint = () => window.print()
@@ -338,6 +419,24 @@ const doPrint = () => window.print()
 .ringkasan-label {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.candidate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.candidate-item:hover {
+  border-color: var(--accent);
 }
 
 @media (max-width: 768px) {

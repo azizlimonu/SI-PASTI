@@ -70,7 +70,7 @@
               <th>Jabatan</th>
               <th>Instansi / Perusahaan</th>
               <th>Jenis</th>
-              <th v-if="auth.isAdmin" style="text-align:right;">Aksi</th>
+              <th style="text-align:right;">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -95,24 +95,33 @@
                   {{ p.jenis_pihak === 'Lainnya' && p.jenis_pihak_lainnya ? p.jenis_pihak_lainnya : p.jenis_pihak }}
                 </span>
               </td>
-              <td v-if="auth.isAdmin">
+              <td>
                 <div
                   style="display:flex; gap:0.375rem; justify-content:flex-end;"
                 >
-                  <button
+                  <RouterLink
+                    :to="{ path: '/sktjm', query: { pihak_id: p.id } }"
                     class="btn-secondary"
-                    style="font-size:0.72rem; padding:0.25rem 0.625rem;"
-                    @click="openEditForm(p)"
+                    style="font-size:0.72rem; padding:0.25rem 0.625rem; text-decoration:none;"
                   >
-                    Edit
-                  </button>
-                  <button
-                    class="btn-secondary"
-                    style="font-size:0.72rem; padding:0.25rem 0.625rem; color:#f87171;"
-                    @click="confirmDelete(p)"
-                  >
-                    Hapus
-                  </button>
+                    Cek SKTJM
+                  </RouterLink>
+                  <template v-if="auth.isAdmin">
+                    <button
+                      class="btn-secondary"
+                      style="font-size:0.72rem; padding:0.25rem 0.625rem;"
+                      @click="openEditForm(p)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn-secondary"
+                      style="font-size:0.72rem; padding:0.25rem 0.625rem; color:#f87171;"
+                      @click="confirmDelete(p)"
+                    >
+                      Hapus
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>

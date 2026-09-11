@@ -19,6 +19,9 @@ export const pihakService = {
   cekSktjm: (params = {}) =>
     api.get('/pihak/sktjm', { params }),
 
+  cariSktjm: (q) =>
+    api.get('/pihak/sktjm/cari', { params: { q } }),
+
   getRiwayatTGR: (search) =>
     api.get('/pihak/riwayat-tgr', { params: { search } })
 }

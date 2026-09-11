@@ -53,6 +53,13 @@
               {{ sisaTgr > 0 ? 'TIDAK BERSIH' : 'BERSIH' }}
             </span>
           </div>
+          <RouterLink
+            :to="{ path: '/sktjm', query: { pihak_id: pihak.id } }"
+            class="btn-secondary"
+            style="font-size:0.75rem; text-decoration:none;"
+          >
+            📄 Cek SKTJM
+          </RouterLink>
         </div>
         <div class="profile-grid">
           <div>

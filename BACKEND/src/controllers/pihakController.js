@@ -416,6 +416,42 @@ const deletePihak = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════
+// CARI PIHAK UNTUK SKTJM (bisa banyak hasil, user pilih sendiri)
+// ═══════════════════════════════════════════
+const cariPihakSktjm = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || !q.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kata kunci pencarian wajib diisi.'
+      });
+    }
+
+    const hasil = await Pihak.findAll({
+      where: {
+        [Op.or]: [
+          { nip: q },
+          { nik: q },
+          { nama: { [Op.like]: `%${q}%` } }
+        ]
+      },
+      attributes: ['id', 'nama', 'nip', 'nik', 'jabatan', 'instansi_perusahaan', 'jenis_pihak'],
+      order: [['nama', 'ASC']],
+      limit: 20
+    });
+
+    return res.json({ success: true, data: hasil });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server: ' + e.message
+    });
+  }
+};
+
+// ═══════════════════════════════════════════
 // CEK SKTJM
 // ═══════════════════════════════════════════
 const cekSKTJM = async (req, res) => {
@@ -463,12 +499,20 @@ const cekSKTJM = async (req, res) => {
           model: Temuan,
           as: 'temuan',
           include: [{
+            model: DokumenPenugasan,
+            as: 'dokumen',
+            attributes: ['id', 'judul_dokumen'],
             include: [{
-              model: Pkpt,
-              as: 'pkpt',
-              where: getKeirbanFilter(user),
-              attributes: ['id', 'tahun', 'keirbanan']
-            }],
+              model: Penugasan,
+              as: 'penugasan',
+              attributes: ['id', 'nama_penugasan'],
+              include: [{
+                model: Pkpt,
+                as: 'pkpt',
+                where: getKeirbanFilter(req.user),
+                attributes: ['id', 'tahun', 'keirbanan']
+              }]
+            }]
           }]
         },
         {
@@ -579,5 +623,6 @@ module.exports = {
   updatePihak,
   deletePihak,
   cekSKTJM,
-  getRiwayatTGR
+  getRiwayatTGR,
+  cariPihakSktjm
 };
