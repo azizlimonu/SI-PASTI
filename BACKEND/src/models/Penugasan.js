@@ -6,6 +6,7 @@ const Penugasan = sequelize.define('Penugasan', {
   pkpt_id: { type: DataTypes.INTEGER, allowNull: false },
   nama_penugasan: { type: DataTypes.STRING(255), allowNull: false },
   jenis_penugasan: { type: DataTypes.STRING(100), allowNull: false },
+  dasar_penugasan: { type: DataTypes.STRING(150), allowNull: true },
   tanggal_mulai: { type: DataTypes.DATEONLY, allowNull: true },
   tanggal_selesai: { type: DataTypes.DATEONLY, allowNull: true },
   status: { type: DataTypes.ENUM('Belum Mulai', 'Dalam Proses', 'Selesai'), defaultValue: 'Belum Mulai' },

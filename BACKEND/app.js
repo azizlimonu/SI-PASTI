@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -46,8 +47,17 @@ app.use('/api/pihak', pihakRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/pengaturan', pengaturanRoutes);
 
-// Static files untuk akses file upload
-app.use('/uploads', express.static('uploads'));
+// Hanya logo yang publik (dipakai <img> di sidebar, tidak bisa kirim token).
+// File SPT/dokumen/bukti TL TIDAK bisa diakses langsung — wajib lewat
+// endpoint /download yang terautentikasi.
+app.use(
+  '/uploads/logo',
+  (req, res, next) => {
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(path.join(__dirname, 'uploads', 'logo'))
+);
 
 app.get('/', (req, res) => {
   res.json({ message: 'SI PASTI API berjalan dengan baik.' });

@@ -5,6 +5,9 @@ const {
 } = require('../models');
 const writeLog = require('../utils/writelog');
 const { sendFileDownload } = require('../utils/downloadFile');
+const {
+  bolehAkses, keirbananDariTemuan, keirbananDariRekomendasi, tolakAkses
+} = require('../utils/akses');
 
 // ═══════════════════════════════════════════
 // GET REKOMENDASI BY TEMUAN
@@ -12,6 +15,14 @@ const { sendFileDownload } = require('../utils/downloadFile');
 const getRekomendasiByTemuan = async (req, res) => {
   try {
     const { temuan_id } = req.params;
+
+    const keirbanan = await keirbananDariTemuan(temuan_id);
+    if (keirbanan === null) {
+      return res.status(404).json({ success: false, message: 'Temuan tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbanan)) {
+      return tolakAkses(res, req.user);
+    }
 
     const { page = 1, limit = 25 } = req.query
     const offset = (parseInt(page) - 1) * parseInt(limit)
@@ -444,6 +455,14 @@ const tambahSetoranTgr = async (req, res) => {
 // ═══════════════════════════════════════════
 const getSetoranByRekomendasi = async (req, res) => {
   try {
+    const keirbanan = await keirbananDariRekomendasi(req.params.id);
+    if (keirbanan === null) {
+      return res.status(404).json({ success: false, message: 'Rekomendasi tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbanan)) {
+      return tolakAkses(res, req.user);
+    }
+
     const setorans = await SetoranTgr.findAll({
       where: { rekomendasi_id: req.params.id },
       include: [{ model: User, as: 'creator', attributes: ['id', 'nama'] }],

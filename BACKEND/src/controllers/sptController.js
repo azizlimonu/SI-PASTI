@@ -3,6 +3,7 @@ const writeLog = require('../utils/writelog');
 const path = require('path');
 const fs = require('fs');
 const { sendFileDownload } = require('../utils/downloadFile');
+const { bolehAkses, keirbananDariSpt, tolakAkses } = require('../utils/akses');
 
 // ═══════════════════════════════════════════
 // GET SPT BY PENUGASAN
@@ -453,13 +454,21 @@ const tambahTim = async (req, res) => {
 // ═══════════════════════════════════════════
 const hapusTim = async (req, res) => {
   try {
-    const tim = await Tim.findByPk(req.params.tim_id);
+    // Tim harus milik SPT di URL — mencegah hapus tim SPT lain lewat tim_id
+    const tim = await Tim.findOne({
+      where: { id: req.params.tim_id, spt_id: req.params.spt_id }
+    });
 
     if (!tim) {
       return res.status(404).json({
         success: false,
         message: 'Anggota tim tidak ditemukan.'
       });
+    }
+
+    const keirbanan = await keirbananDariSpt(tim.spt_id);
+    if (!bolehAkses(req.user, keirbanan)) {
+      return tolakAkses(res, req.user);
     }
 
     await tim.destroy();

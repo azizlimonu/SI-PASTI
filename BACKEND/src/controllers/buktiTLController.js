@@ -1,7 +1,12 @@
 const {
   BuktiTL, TindakLanjutBukti, TindakLanjut,
-  Rekomendasi, User, sequelize
+  Rekomendasi, Temuan, DokumenPenugasan, Penugasan, Pkpt,
+  User, sequelize
 } = require('../models');
+const {
+  bolehAkses, keirbananDariTL, bolehAksesBukti, bolehUbahBukti, whereBuktiBoleh,
+  tolakAkses, PESAN_BUKTI_BERSAMA
+} = require('../utils/akses');
 const writeLog = require('../utils/writelog');
 const fs = require('fs');
 const { sendFileDownload } = require('../utils/downloadFile');
@@ -13,13 +18,18 @@ const getAllBukti = async (req, res) => {
   try {
     const { tindak_lanjut_id } = req.query;
 
-    let where = {};
+    let where = await whereBuktiBoleh(req.user);
     let include = [
       { model: User, as: 'uploader', attributes: ['id', 'nama'] }
     ];
 
     // Kalau ada filter tindak_lanjut_id
     if (tindak_lanjut_id) {
+      const keirbananTL = await keirbananDariTL(tindak_lanjut_id);
+      if (keirbananTL !== null && !bolehAkses(req.user, keirbananTL)) {
+        return tolakAkses(res, req.user);
+      }
+
       const tl = await TindakLanjut.findByPk(tindak_lanjut_id, {
         include: [{ model: BuktiTL, as: 'buktis' }]
       });
@@ -87,6 +97,27 @@ const uploadBukti = async (req, res) => {
         success: false,
         message: 'Upload file atau isi link bukti, minimal salah satu wajib diisi.'
       });
+    }
+
+    // Pastikan semua TL tujuan milik keirbanan user (file yang sudah terunggah dibuang kalau ditolak)
+    const hapusUpload = () => {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    };
+    const tlTujuan = tindak_lanjut_id
+      ? (Array.isArray(tindak_lanjut_id) ? tindak_lanjut_id : [tindak_lanjut_id])
+      : [];
+    for (const tlId of tlTujuan) {
+      const keirbananTL = await keirbananDariTL(tlId);
+      if (keirbananTL === null) {
+        await transaction.rollback();
+        hapusUpload();
+        return res.status(404).json({ success: false, message: 'Tindak lanjut tidak ditemukan.' });
+      }
+      if (!bolehAkses(user, keirbananTL)) {
+        await transaction.rollback();
+        hapusUpload();
+        return tolakAkses(res, user);
+      }
     }
 
     // Buat master bukti
@@ -159,6 +190,18 @@ const attachBukti = async (req, res) => {
       });
     }
 
+    // Pemakai harus berhak atas bukti DAN tindak lanjut tujuan
+    if (!(await bolehAksesBukti(req.user, bukti))) {
+      return tolakAkses(res, req.user);
+    }
+    const keirbananTL = await keirbananDariTL(tindak_lanjut_id);
+    if (keirbananTL === null) {
+      return res.status(404).json({ success: false, message: 'Tindak lanjut tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbananTL)) {
+      return tolakAkses(res, req.user);
+    }
+
     // Cek apakah sudah diattach
     const existing = await TindakLanjutBukti.findOne({
       where: { bukti_id, tindak_lanjut_id }
@@ -192,6 +235,14 @@ const detachBukti = async (req, res) => {
   try {
     const { bukti_id, tindak_lanjut_id } = req.body;
 
+    const keirbananTL = await keirbananDariTL(tindak_lanjut_id);
+    if (keirbananTL === null) {
+      return res.status(404).json({ success: false, message: 'Tindak lanjut tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbananTL)) {
+      return tolakAkses(res, req.user);
+    }
+
     await TindakLanjutBukti.destroy({
       where: { bukti_id, tindak_lanjut_id }
     });
@@ -222,6 +273,12 @@ const updateBukti = async (req, res) => {
         success: false,
         message: 'Bukti tidak ditemukan.'
       });
+    }
+
+    const bolehLihat = await bolehAksesBukti(user, bukti);
+    if (!bolehLihat || !(await bolehUbahBukti(user, bukti))) {
+      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return tolakAkses(res, user, bolehLihat ? PESAN_BUKTI_BERSAMA : undefined);
     }
 
     // Hapus file lama jika ada file baru
@@ -262,6 +319,11 @@ const deleteBukti = async (req, res) => {
         success: false,
         message: 'Bukti tidak ditemukan.'
       });
+    }
+
+    const bolehLihat = await bolehAksesBukti(user, bukti);
+    if (!bolehLihat || !(await bolehUbahBukti(user, bukti))) {
+      return tolakAkses(res, user, bolehLihat ? PESAN_BUKTI_BERSAMA : undefined);
     }
 
     // Hapus semua relasi pivot dulu

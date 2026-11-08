@@ -14,6 +14,14 @@ const getTLByRekomendasi = async (req, res) => {
   try {
     const { rekomendasi_id } = req.params;
 
+    const keirbanan = await keirbananDariRekomendasi(rekomendasi_id);
+    if (keirbanan === null) {
+      return res.status(404).json({ success: false, message: 'Rekomendasi tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbanan)) {
+      return tolakAkses(res, req.user);
+    }
+
     const { page = 1, limit = 25 } = req.query
     const offset = (parseInt(page) - 1) * parseInt(limit)
 
@@ -262,10 +270,38 @@ const createTLBatch = async (req, res) => {
       });
     }
 
+    // Semua bukti yang dilampirkan harus boleh diakses user
+    const semuaBuktiId = new Set([
+      ...(Array.isArray(bukti_untuk_semua) ? bukti_untuk_semua : []),
+      ...tindak_lanjut.flatMap((item) => (Array.isArray(item.bukti_ids) ? item.bukti_ids : []))
+    ]);
+    for (const buktiId of semuaBuktiId) {
+      const bukti = await BuktiTL.findByPk(buktiId);
+      if (!bukti) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, message: 'Bukti tidak ditemukan.' });
+      }
+      if (!(await bolehAksesBukti(user, bukti))) {
+        await transaction.rollback();
+        return tolakAkses(res, user);
+      }
+    }
+
     const hasil = [];
 
     for (const item of tindak_lanjut) {
       if (!item.rekomendasi_id || !item.uraian_tl || !item.tanggal_tl) continue;
+
+      // Setiap rekomendasi tujuan harus milik keirbanan user (ditolak = semua dibatalkan)
+      const keirbanan = await keirbananDariRekomendasi(item.rekomendasi_id);
+      if (keirbanan === null) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, message: 'Rekomendasi tidak ditemukan.' });
+      }
+      if (!bolehAkses(user, keirbanan)) {
+        await transaction.rollback();
+        return tolakAkses(res, user);
+      }
 
       const tl = await TindakLanjut.create({
         rekomendasi_id: item.rekomendasi_id,
@@ -655,7 +691,10 @@ const getPenugasanNeedTL = async (req, res) => {
   try {
     const user = req.user;
     const { tahun, keirbanan, search } = req.query;
-    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
+    const { getKeirbanFilter } = require('../middleware/auth');
+    const {
+      bolehAkses, keirbananDariRekomendasi, bolehAksesBukti, tolakAkses
+    } = require('../utils/akses');
     if (tahun) pkptWhere.tahun = tahun;
 
     const penugasanWhere = {};

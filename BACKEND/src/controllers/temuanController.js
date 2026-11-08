@@ -3,6 +3,7 @@ const {
   Penugasan, Pkpt, Pihak, User, sequelize,
   TindakLanjut, BuktiTL
 } = require('../models');
+const { bolehAkses, keirbananDariDokumen, tolakAkses } = require('../utils/akses');
 const writeLog = require('../utils/writelog');
 
 // ═══════════════════════════════════════════
@@ -11,6 +12,14 @@ const writeLog = require('../utils/writelog');
 const getTemuanByDokumen = async (req, res) => {
   try {
     const { dokumen_id } = req.params;
+
+    const keirbanan = await keirbananDariDokumen(dokumen_id);
+    if (keirbanan === null) {
+      return res.status(404).json({ success: false, message: 'Dokumen tidak ditemukan.' });
+    }
+    if (!bolehAkses(req.user, keirbanan)) {
+      return tolakAkses(res, req.user);
+    }
 
     const { page = 1, limit = 25 } = req.query
     const offset = (parseInt(page) - 1) * parseInt(limit)
