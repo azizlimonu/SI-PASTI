@@ -3,7 +3,7 @@ const {
   DokumenPenugasan, Penugasan, Pkpt,
   TindakLanjut, BuktiTL, User
 } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const { Op } = require('sequelize');
 const { getKeirbanFilter } = require('../middleware/auth');
 

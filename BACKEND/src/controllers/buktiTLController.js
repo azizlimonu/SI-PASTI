@@ -2,7 +2,7 @@ const {
   BuktiTL, TindakLanjutBukti, TindakLanjut,
   Rekomendasi, User, sequelize
 } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const fs = require('fs');
 const { sendFileDownload } = require('../utils/downloadFile');
 

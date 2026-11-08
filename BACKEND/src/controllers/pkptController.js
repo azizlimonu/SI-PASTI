@@ -1,5 +1,5 @@
 const { Pkpt, Penugasan, Spt, User } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const { getKeirbanFilter } = require('../middleware/auth');
 const { Op } = require('sequelize');
 

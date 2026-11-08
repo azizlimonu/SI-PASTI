@@ -1,5 +1,5 @@
 const { Spt, Tim, Penugasan, Pkpt, User } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const path = require('path');
 const fs = require('fs');
 const { sendFileDownload } = require('../utils/downloadFile');

@@ -1,5 +1,5 @@
 const { Pengaturan } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const fs = require('fs');
 
 // Ambil satu-satunya baris pengaturan, bikin default kalau belum ada.

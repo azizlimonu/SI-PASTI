@@ -1,6 +1,6 @@
 const { User } = require('../models');
 const { hashPassword, comparePassword, generateToken } = require('../utils/helpers');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 require('dotenv').config();
 
 // ═══════════════════════════════════════════

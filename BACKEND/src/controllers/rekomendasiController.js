@@ -3,7 +3,7 @@ const {
   Penugasan, Pkpt, Pihak, User, TindakLanjut,
   SetoranTgr, sequelize
 } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const { sendFileDownload } = require('../utils/downloadFile');
 
 // ═══════════════════════════════════════════

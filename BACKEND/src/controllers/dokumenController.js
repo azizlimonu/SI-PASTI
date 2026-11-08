@@ -2,7 +2,7 @@ const {
   DokumenPenugasan, Temuan, Rekomendasi,
   Penugasan, Pkpt, User, Pihak, sequelize
 } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 const { Op } = require('sequelize');
 const fs = require('fs');
 const { sendFileDownload } = require('../utils/downloadFile');

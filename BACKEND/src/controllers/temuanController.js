@@ -3,7 +3,7 @@ const {
   Penugasan, Pkpt, Pihak, User, sequelize,
   TindakLanjut, BuktiTL
 } = require('../models');
-const writeLog = require('../utils/writeLog');
+const writeLog = require('../utils/writelog');
 
 // ═══════════════════════════════════════════
 // GET TEMUAN BY DOKUMEN
