@@ -194,8 +194,8 @@
                       </div>
                       <a
                         v-if="s.file_path"
-                        :href="`http://localhost:3000/${s.file_path}`"
-                        download
+                        href="#"
+                        @click.prevent="downloadFile(`/dokumen/setoran/${s.id}/download`, `Setoran-TGR-${s.id}`)"
                         class="btn-secondary"
                         style="font-size:0.7rem; padding:0.2rem 0.5rem;"
                       >
@@ -305,8 +305,8 @@
                 <div style="display:flex; gap:0.375rem; flex-wrap:wrap;">
                   <a
                     v-if="bukti.file_path"
-                    :href="`http://localhost:3000/${bukti.file_path}`"
-                    download
+                    href="#"
+                    @click.prevent="downloadFile(`/bukti/${bukti.id}/download`, bukti.judul_bukti)"
                     class="btn-secondary"
                     style="font-size:0.72rem; padding:0.2rem 0.5rem;"
                   >
@@ -539,6 +539,7 @@
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { useFileDownload } from '@/composables/useFileDownload'
 import { useTindakLanjutStore } from '@/stores/tindaklanjut'
 import { useDokumenStore } from '@/stores/dokumen'
 import { tindakLanjutService } from '@/services/tindakLanjutService'
@@ -554,6 +555,7 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const toast = useToast()
+const { downloadFile } = useFileDownload()
 const tlStore = useTindakLanjutStore()
 const dokumen = useDokumenStore()
 

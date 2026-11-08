@@ -288,7 +288,7 @@ import { usePenugasanStore } from '@/stores/penugasan'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import AppModal from '@/components/common/AppModal.vue'
-import PenugasanForm from '@/components/penugasan/PenugasanForm.vue'
+import PenugasanForm from '@/components/penugasan/Penugasanform.vue'
 import { formatDate } from '@/utils/format'
 import { BADGE_COLOR } from '@/utils/constants'
 

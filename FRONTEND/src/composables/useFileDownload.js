@@ -1,21 +1,52 @@
 import api from '@/services/api'
 import { useToast } from './useToast'
 
+const MIME_EXT = {
+  'application/pdf': '.pdf',
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx'
+}
+
+// Ambil nama file dari header Content-Disposition (termasuk filename*=UTF-8'')
+const filenameFromHeader = (disposition) => {
+  if (!disposition) return null
+  const star = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (star) return decodeURIComponent(star[1])
+  const plain = disposition.match(/filename="?([^";]+)"?/i)
+  return plain ? plain[1] : null
+}
+
+// Error dari server datang sebagai Blob (responseType: 'blob') — baca pesan JSON-nya
+const messageFromError = async (e) => {
+  const data = e?.response?.data
+  if (data instanceof Blob) {
+    try {
+      return JSON.parse(await data.text()).message
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 export const useFileDownload = () => {
   const toast = useToast()
 
-  // url = path relatif ke API (misal '/dokumen/12/download')
-  // fallbackName = nama file kalau server tidak kasih nama (jarang terjadi)
-  const downloadFile = async (url, fallbackName = 'file') => {
+  // source = path API (misal '/dokumen/12/download') ATAU promise axios dari service
+  // fallbackName = nama cadangan kalau server tidak mengirim nama file
+  const downloadFile = async (source, fallbackName = 'file') => {
     try {
-      const res = await api.get(url, { responseType: 'blob' })
+      const res = typeof source === 'string'
+        ? await api.get(source, { responseType: 'blob' })
+        : await source
 
-      // Ambil nama file asli dari header Content-Disposition kalau ada
-      const disposition = res.headers['content-disposition']
-      let filename = fallbackName
-      if (disposition) {
-        const match = disposition.match(/filename="?([^"]+)"?/)
-        if (match) filename = decodeURIComponent(match[1])
+      let filename = filenameFromHeader(res.headers['content-disposition']) || fallbackName
+      if (!/\.[A-Za-z0-9]{2,5}$/.test(filename)) {
+        filename += MIME_EXT[res.data.type] || ''
       }
 
       const blobUrl = window.URL.createObjectURL(res.data)
@@ -27,9 +58,16 @@ export const useFileDownload = () => {
       link.remove()
       window.URL.revokeObjectURL(blobUrl)
     } catch (e) {
-      toast.error('Gagal mengunduh file. File mungkin tidak tersedia.')
+      toast.error((await messageFromError(e)) || 'Gagal mengunduh file. File mungkin tidak tersedia.')
     }
   }
 
-  return { downloadFile }
+  // Bukti TL: ada file_path -> unduh lewat endpoint; hanya link -> biarkan href jalan
+  const openBukti = (event, bukti) => {
+    if (!bukti.file_path) return
+    event.preventDefault()
+    downloadFile(`/bukti/${bukti.id}/download`, bukti.judul_bukti)
+  }
+
+  return { downloadFile, openBukti }
 }

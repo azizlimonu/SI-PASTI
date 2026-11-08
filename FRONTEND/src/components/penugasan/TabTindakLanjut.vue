@@ -153,10 +153,9 @@
           <a
             v-for="bukti in tl.buktis"
             :key="bukti.id"
-            :href="bukti.file_path ?
-            `http://localhost:3000/${bukti.file_path}` : bukti.link_bukti"
-            target="_blank"
-            :download="bukti.file_path ? true : null"
+            :href="bukti.file_path ? '#' : bukti.link_bukti"
+            :target="bukti.file_path ? null : '_blank'"
+            @click="openBukti($event, bukti)"
             style="display:inline-flex; align-items:center;
             gap:0.375rem; padding:0.25rem 0.625rem; border-radius:0.375rem;
             background:var(--accent-light); border:1px solid
@@ -204,6 +203,7 @@
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { useFileDownload } from '@/composables/useFileDownload'
 import { useTindakLanjutStore } from '@/stores/tindaklanjut'
 import { useDokumenStore } from '@/stores/dokumen'
 import { tindakLanjutService } from '@/services/tindakLanjutService'
@@ -220,6 +220,7 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const toast = useToast()
+const { downloadFile } = useFileDownload()
 const tlStore = useTindakLanjutStore()
 const dokumen = useDokumenStore()
 

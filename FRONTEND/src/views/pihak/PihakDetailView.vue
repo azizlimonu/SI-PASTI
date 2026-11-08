@@ -213,9 +213,9 @@
                     <a
                       v-for="b in tl.buktis"
                       :key="b.id"
-                      :href="b.file_path ? fileUrl(b.file_path) : b.link_bukti"
-                      target="_blank"
-                      download
+                      :href="b.file_path ? '#' : b.link_bukti"
+                      :target="b.file_path ? null : '_blank'"
+                      @click="openBukti($event, b)"
                       class="btn-secondary"
                       style="font-size:0.7rem; padding:0.2rem 0.5rem;"
                     >
@@ -249,20 +249,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { pihakService } from '@/services/pihakService'
+import { useFileDownload } from '@/composables/useFileDownload'
 import { formatDate, formatRupiah, statusRekomendasiColor, statusPenerimaanColor } from '@/utils/format'
 import { BADGE_COLOR } from '@/utils/constants'
 
 const route = useRoute()
+const { openBukti } = useFileDownload()
 const loading = ref(false)
 const pihak = ref(null)
-
-// Base URL file statis (bukan API) — ambil dari env yang sama dipakai axios,
-// supaya port selalu ikut config, tidak pernah hardcode.
-const fileBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || ''
-
-// Windows menyimpan file_path pakai backslash (\), padahal URL wajib pakai
-// forward slash (/) — tanpa ini, link download bisa gagal di-resolve browser.
-const fileUrl = (filePath) => `${fileBaseUrl}/${filePath.replace(/\\/g, '/')}`
 
 const sisaTgr = computed(() => pihak.value?.statistik?.sisa_tgr || 0)
 const tgrPersen = computed(() => {

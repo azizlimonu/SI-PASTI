@@ -158,7 +158,8 @@
           >
             <a
               v-if="sptData.file_spt"
-              :href="`http://localhost:3000/${sptData.file_spt}`"
+              href="#"
+              @click.prevent="downloadFile(`/spt/${sptData.id}/download`, `SPT-${sptData.id}`)"
               target="_blank"
               class="btn-secondary"
               style="font-size:0.8rem; padding:0.375rem 0.75rem;"
@@ -366,8 +367,8 @@
             <div style="display:flex; gap:0.5rem; align-items:center;">
               <a
                 v-if="dok.file_path"
-                :href="`http://localhost:8000/${dok.file_path}`"
-                download
+                href="#"
+                @click.prevent="downloadFile(`/dokumen/${dok.id}/download`, dok.judul_dokumen)"
                 class="btn-icon"
               >
                 <svg
@@ -518,6 +519,7 @@ import { usePenugasanStore } from '@/stores/penugasan'
 import { useDokumenStore } from '@/stores/dokumen'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { useFileDownload } from '@/composables/useFileDownload'
 import { penugasanService } from '@/services/penugasanService'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
@@ -536,6 +538,7 @@ const penugasan = usePenugasanStore()
 const dokumen = useDokumenStore()
 const auth = useAuthStore()
 const toast = useToast()
+const { downloadFile } = useFileDownload()
 
 const loading = ref(false)
 const loadingDokumen = ref(false)

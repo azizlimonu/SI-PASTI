@@ -272,7 +272,7 @@ import { useToast } from '@/composables/useToast'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
 import AppPagination from '@/components/common/AppPagination.vue'
-import PenugasanForm from '@/components/penugasan/PenugasanForm.vue'
+import PenugasanForm from '@/components/penugasan/Penugasanform.vue'
 import { formatDate } from '@/utils/format'
 import { STATUS_PENUGASAN, BADGE_COLOR } from '@/utils/constants'
 

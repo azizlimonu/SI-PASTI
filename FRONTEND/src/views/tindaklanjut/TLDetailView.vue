@@ -209,7 +209,11 @@
                     :key="bukti.id"
                     class="bukti-chip"
                   >
-                    <a :href="tlBuktiUrl(bukti)" target="_blank">
+                    <a
+                      :href="bukti.file_path ? '#' : bukti.link_bukti"
+                      :target="bukti.file_path ? null : '_blank'"
+                      @click="openBukti($event, bukti)"
+                    >
                       📎 {{ bukti.judul_bukti }}
                     </a>
                     <button
@@ -486,7 +490,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTindakLanjutStore } from '@/stores/tindaklanjut'
 import { useToast } from '@/composables/useToast'
-import { useFileDownload } from '@/composables/useFileDownload'
+const { downloadFile, openBukti } = useFileDownload()
 import { dokumenService } from '@/services/dokumenService'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
@@ -499,8 +503,6 @@ const auth = useAuthStore()
 const tindaklanjut = useTindakLanjutStore()
 const toast = useToast()
 const { triggerDownload } = useFileDownload()
-
-const fileBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || ''
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -542,16 +544,7 @@ const timelineFor = (rek) => {
 }
 
 const downloadSetoranBukti = (s) => {
-  triggerDownload(dokumenService.downloadSetoran(s.id), `Setoran-TGR-${s.id}`)
-}
-
-// Bukti TL masih pakai link langsung (belum ada endpoint download khusus
-// bukti TL di backend) — normalisasi backslash Windows ke forward slash
-// supaya URL-nya valid.
-const tlBuktiUrl = (bukti) => {
-  if (bukti.link_bukti) return bukti.link_bukti
-  const normalized = (bukti.file_path || '').split(String.fromCharCode(92)).join('/')
-  return `${fileBaseUrl}/${normalized}`
+   downloadFile(dokumenService.downloadSetoran(s.id), `Setoran-TGR-${s.id}`)
 }
 
 // === Tambah / Edit TL (+ opsional setoran TGR) ===

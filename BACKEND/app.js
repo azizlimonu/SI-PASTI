@@ -11,9 +11,10 @@ const app = express();
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://domain-han.go.id'
+    ? 'https://sipasti.vercel.app'
     : 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['Content-Disposition']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
