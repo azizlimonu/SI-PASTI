@@ -7,6 +7,63 @@ const { Op } = require('sequelize');
 const { getKeirbanFilter } = require('../middleware/auth');
 
 // ═══════════════════════════════════════════
+// HELPER — rantai relasi dengan INNER JOIN di setiap tingkat.
+// Tanpa `required: true` di tiap tingkat, filter keirbanan/tahun hanya menyaring
+// tabel terdalam: angka membengkak dan data keirbanan lain ikut terbawa.
+// (Dibuat fungsi supaya objek include selalu baru; Sequelize memodifikasi objek include.)
+// ═══════════════════════════════════════════
+const rantaiPenugasan = (where, detail = false) => ({
+  model: Penugasan, as: 'penugasan', required: true,
+  attributes: detail ? ['id', 'nama_penugasan'] : [],
+  include: [{
+    model: Pkpt, as: 'pkpt', where, required: true,
+    attributes: detail ? ['id', 'tahun', 'keirbanan', 'sumber'] : []
+  }]
+});
+
+const rantaiDokumen = (where, detail = false) => ({
+  model: DokumenPenugasan, as: 'dokumen', required: true,
+  attributes: detail ? ['id', 'judul_dokumen'] : [],
+  include: [rantaiPenugasan(where, detail)]
+});
+
+const rantaiTemuan = (where, detail = false) => ({
+  model: Temuan, as: 'temuan', required: true,
+  attributes: detail ? ['id'] : [],
+  include: [rantaiDokumen(where, detail)]
+});
+
+// Tanggal (YYYY-MM-DD) menurut jam server, dipakai membandingkan kolom DATE batas_waktu_tl
+const tanggalLokal = (tambahHari = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + tambahHari);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+// Jumlah penugasan yang SPT-nya sudah > 30 hari tetapi belum punya LHP
+const hitungSptBelumLhp = async (pkptWhere) => {
+  const tigaPuluhHariLalu = new Date();
+  tigaPuluhHariLalu.setDate(tigaPuluhHariLalu.getDate() - 30);
+
+  const rows = await Penugasan.findAll({
+    attributes: ['id'],
+    include: [
+      { model: Pkpt, as: 'pkpt', where: pkptWhere, attributes: [], required: true },
+      {
+        model: Spt, as: 'spt', attributes: [], required: true,
+        where: { tanggal_mulai: { [Op.lte]: tigaPuluhHariLalu } }
+      },
+      {
+        model: DokumenPenugasan, as: 'dokumens', attributes: ['id'], required: false,
+        where: { jenis_dokumen: 'LHP' }
+      }
+    ]
+  });
+  return rows.filter((p) => !p.dokumens || p.dokumens.length === 0).length;
+};
+
+// ═══════════════════════════════════════════
 // DASHBOARD UTAMA
 // ═══════════════════════════════════════════
 const getDashboard = async (req, res) => {
@@ -16,93 +73,39 @@ const getDashboard = async (req, res) => {
     const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
     if (tahun) pkptWhere.tahun = tahun;
 
-    // Total PKPT
-    // Hanya PKPT sungguhan (wadah Non-PKPT tidak dihitung sebagai program PKPT)
+    // Total PKPT (hanya PKPT sungguhan; "wadah" Non-PKPT tidak dihitung sebagai program PKPT)
     const totalPkpt = await Pkpt.count({ where: { ...pkptWhere, sumber: 'PKPT' } });
     const pkptAktif = await Pkpt.count({
       where: { ...pkptWhere, sumber: 'PKPT', status: 'Aktif' }
     });
 
-    // Total Penugasan
-    const totalPenugasan = await Penugasan.count({
-      include: [{
-        model: Pkpt, as: 'pkpt',
-        where: pkptWhere,
-        attributes: []
-      }]
-    });
-
+    // Penugasan (PKPT + Non-PKPT)
+    const penugasanInc = () => [
+      { model: Pkpt, as: 'pkpt', where: pkptWhere, attributes: [], required: true }
+    ];
+    const totalPenugasan = await Penugasan.count({ include: penugasanInc() });
     const penugasanSelesai = await Penugasan.count({
-      where: { status: 'Selesai' },
-      include: [{
-        model: Pkpt, as: 'pkpt',
-        where: pkptWhere,
-        attributes: []
-      }]
+      where: { status: 'Selesai' }, include: penugasanInc()
     });
-
     const penugasanDalamProses = await Penugasan.count({
-      where: { status: 'Dalam Proses' },
-      include: [{
-        model: Pkpt, as: 'pkpt',
-        where: pkptWhere,
-        attributes: []
-      }]
+      where: { status: 'Dalam Proses' }, include: penugasanInc()
     });
 
-    // Total Dokumen
+    // Total Dokumen & Temuan
     const totalDokumen = await DokumenPenugasan.count({
-      include: [{
-        model: Penugasan, as: 'penugasan',
-        attributes: [],
-        include: [{
-          model: Pkpt, as: 'pkpt',
-          where: pkptWhere,
-          attributes: []
-        }]
-      }]
+      include: [rantaiPenugasan(pkptWhere)]
     });
-
-    // Total Temuan
     const totalTemuan = await Temuan.count({
-      include: [{
-        model: DokumenPenugasan, as: 'dokumen',
-        attributes: [],
-        include: [{
-          model: Penugasan, as: 'penugasan',
-          attributes: [],
-          include: [{
-            model: Pkpt, as: 'pkpt',
-            where: pkptWhere,
-            attributes: []
-          }]
-        }]
-      }]
+      include: [rantaiDokumen(pkptWhere)]
     });
 
-    // Total Rekomendasi per status
+    // Rekomendasi per status
     const rekomendasiStats = await Rekomendasi.findAll({
       attributes: [
         'status',
         [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
       ],
-      include: [{
-        model: Temuan, as: 'temuan',
-        attributes: [],
-        include: [{
-          model: DokumenPenugasan, as: 'dokumen',
-          attributes: [],
-          include: [{
-            model: Penugasan, as: 'penugasan',
-            attributes: [],
-            include: [{
-              model: Pkpt, as: 'pkpt',
-              where: pkptWhere,
-              attributes: []
-            }]
-          }]
-        }]
-      }],
+      include: [rantaiTemuan(pkptWhere)],
       group: ['status'],
       raw: true
     });
@@ -114,23 +117,7 @@ const getDashboard = async (req, res) => {
         [sequelize.fn('SUM', sequelize.col('nilai_terlunasi')), 'total_terlunasi']
       ],
       where: { adalah_tgr: true },
-      include: [{
-        model: Temuan, as: 'temuan',
-        attributes: [],
-        include: [{
-          model: DokumenPenugasan, as: 'dokumen',
-          attributes: [],
-          include: [{
-            model: Penugasan, as: 'penugasan',
-            attributes: [],
-            include: [{
-              model: Pkpt, as: 'pkpt',
-              where: pkptWhere,
-              attributes: []
-            }]
-          }]
-        }]
-      }],
+      include: [rantaiTemuan(pkptWhere)],
       raw: true
     });
 
@@ -138,49 +125,24 @@ const getDashboard = async (req, res) => {
     const penugasanTerbaru = await Penugasan.findAll({
       limit: 5,
       include: [{
-        model: Pkpt, as: 'pkpt',
-        where: pkptWhere,
-        attributes: ['id', 'tahun', 'keirbanan']
+        model: Pkpt, as: 'pkpt', where: pkptWhere, required: true,
+        attributes: ['id', 'tahun', 'keirbanan', 'sumber']
       }],
       order: [['created_at', 'DESC']]
     });
 
-    // Rekomendasi yang hampir lewat batas waktu (dalam 7 hari)
-    const hariIni = new Date();
-    const tujuhHariLagi = new Date();
-    tujuhHariLagi.setDate(tujuhHariLagi.getDate() + 7);
-
+    // Rekomendasi yang hampir lewat batas waktu (dalam 7 hari ke depan, termasuk hari ini)
     const hampirJatuhTempo = await Rekomendasi.count({
       where: {
         status: { [Op.ne]: 'Selesai' },
-        batas_waktu_tl: {
-          [Op.between]: [hariIni, tujuhHariLagi]
-        }
+        batas_waktu_tl: { [Op.between]: [tanggalLokal(0), tanggalLokal(7)] }
       },
-      include: [{
-        model: Temuan, as: 'temuan',
-        attributes: [],
-        include: [{
-          model: DokumenPenugasan, as: 'dokumen',
-          attributes: [],
-          include: [{
-            model: Penugasan, as: 'penugasan',
-            attributes: [],
-            include: [{
-              model: Pkpt, as: 'pkpt',
-              where: pkptWhere,
-              attributes: []
-            }]
-          }]
-        }]
-      }]
+      include: [rantaiTemuan(pkptWhere)]
     });
 
     // Format rekomendasi stats
-    const rekStats = {
-      belum: 0, dalam_proses: 0, selesai: 0
-    };
-    rekomendasiStats.forEach(r => {
+    const rekStats = { belum: 0, dalam_proses: 0, selesai: 0 };
+    rekomendasiStats.forEach((r) => {
       if (r.status === 'Belum Ditindaklanjuti') rekStats.belum = parseInt(r.total);
       if (r.status === 'Dalam Proses') rekStats.dalam_proses = parseInt(r.total);
       if (r.status === 'Selesai') rekStats.selesai = parseInt(r.total);
@@ -200,14 +162,14 @@ const getDashboard = async (req, res) => {
       };
 
       // Penugasan tahun lalu yang belum ada dokumen LHP sama sekali
-      // (dihitung lewat 2 query sederhana + selisih, lebih aman daripada
-      // count() dengan where lewat asosiasi nested yang sering error di Sequelize)
       const penugasanBacklogRows = await Penugasan.findAll({
         attributes: ['id'],
-        include: [{ model: Pkpt, as: 'pkpt', where: backlogPkptWhere, attributes: [] }],
+        include: [{
+          model: Pkpt, as: 'pkpt', where: backlogPkptWhere, attributes: [], required: true
+        }],
         raw: true
       });
-      const idsPenugasanBacklog = penugasanBacklogRows.map(p => p.id);
+      const idsPenugasanBacklog = penugasanBacklogRows.map((p) => p.id);
 
       let penugasanDenganLhp = 0;
       if (idsPenugasanBacklog.length > 0) {
@@ -223,7 +185,6 @@ const getDashboard = async (req, res) => {
         });
         penugasanDenganLhp = dokumenLhpRows.length;
       }
-
       const penugasanBelumLhp = idsPenugasanBacklog.length - penugasanDenganLhp;
 
       // Rekomendasi tahun lalu yang belum/masih proses TL
@@ -232,29 +193,12 @@ const getDashboard = async (req, res) => {
           'status',
           [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
         ],
-        include: [{
-          model: Temuan, as: 'temuan',
-          attributes: [],
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: [],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: [],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: backlogPkptWhere,
-                attributes: []
-              }]
-            }]
-          }]
-        }],
+        include: [rantaiTemuan(backlogPkptWhere)],
         group: ['status'],
         raw: true
       });
-
       const findStat = (status) =>
-        parseInt(backlogRekStats.find(r => r.status === status)?.total || 0);
+        parseInt(backlogRekStats.find((r) => r.status === status)?.total || 0);
 
       backlog = {
         tahun_referensi: parseInt(tahun),
@@ -270,29 +214,12 @@ const getDashboard = async (req, res) => {
         'adalah_tgr',
         [sequelize.fn('COUNT', sequelize.col('Rekomendasi.id')), 'total']
       ],
-      include: [{
-        model: Temuan, as: 'temuan',
-        attributes: [],
-        include: [{
-          model: DokumenPenugasan, as: 'dokumen',
-          attributes: [],
-          include: [{
-            model: Penugasan, as: 'penugasan',
-            attributes: [],
-            include: [{
-              model: Pkpt, as: 'pkpt',
-              where: pkptWhere,
-              attributes: []
-            }]
-          }]
-        }]
-      }],
+      include: [rantaiTemuan(pkptWhere)],
       group: ['adalah_tgr'],
       raw: true
     });
-
     const rekJenis = { administratif: 0, tgr: 0 };
-    rekomendasiJenisRaw.forEach(r => {
+    rekomendasiJenisRaw.forEach((r) => {
       const jml = parseInt(r.total);
       if (r.adalah_tgr) rekJenis.tgr = jml; else rekJenis.administratif = jml;
     });
@@ -301,23 +228,7 @@ const getDashboard = async (req, res) => {
     const rekomendasiBuktiRaw = await Rekomendasi.findAll({
       attributes: ['id'],
       include: [
-        {
-          model: Temuan, as: 'temuan',
-          attributes: [],
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: [],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: [],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: pkptWhere,
-                attributes: []
-              }]
-            }]
-          }]
-        },
+        rantaiTemuan(pkptWhere),
         {
           model: TindakLanjut, as: 'tindakLanjuts',
           attributes: ['id', 'status_penerimaan'],
@@ -329,14 +240,12 @@ const getDashboard = async (req, res) => {
         }
       ]
     });
-
     const totalRekBukti = rekomendasiBuktiRaw.length;
-    const rekAdaBukti = rekomendasiBuktiRaw.filter(r =>
+    const rekAdaBukti = rekomendasiBuktiRaw.filter((r) =>
       (r.tindakLanjuts || []).some(
-        tl => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
+        (tl) => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
       )
     ).length;
-
     const buktiTlProgress = {
       total: totalRekBukti,
       ada_bukti: rekAdaBukti,
@@ -376,7 +285,6 @@ const getDashboard = async (req, res) => {
         alert: {
           hampir_jatuh_tempo: hampirJatuhTempo
         },
-        backlog,
         penugasan_terbaru: penugasanTerbaru
       }
     });
@@ -470,27 +378,6 @@ const getAlertTL = async (req, res) => {
     const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
     if (tahun) pkptWhere.tahun = tahun;
     const hariIni = new Date();
-    const tigaHariLagi = new Date();
-    tigaHariLagi.setDate(tigaHariLagi.getDate() + 3);
-
-    const includeNested = [
-      {
-        model: Temuan, as: 'temuan',
-        include: [{
-          model: DokumenPenugasan, as: 'dokumen',
-          attributes: ['id', 'judul_dokumen'],
-          include: [{
-            model: Penugasan, as: 'penugasan',
-            attributes: ['id', 'nama_penugasan'],
-            include: [{
-              model: Pkpt, as: 'pkpt',
-              where: pkptWhere,
-              attributes: ['id', 'tahun', 'keirbanan']
-            }]
-          }]
-        }]
-      }
-    ];
 
     const mapItem = (r) => ({
       rekomendasi_id: r.id,
@@ -506,35 +393,36 @@ const getAlertTL = async (req, res) => {
       status: r.status,
       penugasan: r.temuan.dokumen.penugasan.nama_penugasan,
       keirbanan: r.temuan.dokumen.penugasan.pkpt.keirbanan,
-      tahun_pkpt: r.temuan.dokumen.penugasan.pkpt.tahun
+      tahun_pkpt: r.temuan.dokumen.penugasan.pkpt.tahun,
+      sumber: r.temuan.dokumen.penugasan.pkpt.sumber
     });
 
-    // Sudah terlambat
+    // Sudah terlambat (batas waktu sebelum hari ini)
     const rekomendasiTerlambat = await Rekomendasi.findAll({
       where: {
         status: { [Op.ne]: 'Selesai' },
-        batas_waktu_tl: { [Op.lt]: hariIni }
+        batas_waktu_tl: { [Op.lt]: tanggalLokal(0) }
       },
-      include: includeNested,
+      include: [rantaiTemuan(pkptWhere, true)],
       order: [['batas_waktu_tl', 'ASC']]
     });
 
-    const terlambat = rekomendasiTerlambat.map(r => ({
+    const terlambat = rekomendasiTerlambat.map((r) => ({
       ...mapItem(r),
       hari_terlambat: Math.floor((hariIni - new Date(r.batas_waktu_tl)) / (1000 * 60 * 60 * 24))
     }));
 
-    // Akan jatuh tempo (H-3)
+    // Akan jatuh tempo (H-3, termasuk hari ini)
     const rekomendasiAkanJatuhTempo = await Rekomendasi.findAll({
       where: {
         status: { [Op.ne]: 'Selesai' },
-        batas_waktu_tl: { [Op.between]: [hariIni, tigaHariLagi] }
+        batas_waktu_tl: { [Op.between]: [tanggalLokal(0), tanggalLokal(3)] }
       },
-      include: includeNested,
+      include: [rantaiTemuan(pkptWhere, true)],
       order: [['batas_waktu_tl', 'ASC']]
     });
 
-    const akanJatuhTempo = rekomendasiAkanJatuhTempo.map(r => ({
+    const akanJatuhTempo = rekomendasiAkanJatuhTempo.map((r) => ({
       ...mapItem(r),
       hari_tersisa: Math.ceil((new Date(r.batas_waktu_tl) - hariIni) / (1000 * 60 * 60 * 24))
     }));
@@ -559,121 +447,52 @@ const getAlertTL = async (req, res) => {
 // ═══════════════════════════════════════════
 const getProgressKeirbanan = async (req, res) => {
   try {
+    const user = req.user;
     const { tahun } = req.query;
-    const keirbanans = ['I', 'II', 'III', 'IV', 'V'];
+    const semuaKeirbanan = ['I', 'II', 'III', 'IV', 'V'];
+    // Admin/irban hanya melihat keirbanannya sendiri; superadmin/inspektur/tim TL melihat semua
+    const keirbanans = user.keirbanan === 'ALL'
+      ? semuaKeirbanan
+      : semuaKeirbanan.filter((k) => k === user.keirbanan);
     const pkptWhere = tahun ? { tahun } : {};
 
     const result = [];
 
     for (const kb of keirbanans) {
-      // Total PKPT
-      const totalPkpt = await Pkpt.count({
-        where: { ...pkptWhere, keirbanan: kb, sumber: 'PKPT' }
-      });
+      const where = { ...pkptWhere, keirbanan: kb };
+      const penugasanInc = () => [
+        { model: Pkpt, as: 'pkpt', where, attributes: [], required: true }
+      ];
 
-      // Total penugasan
-      const totalPenugasan = await Penugasan.count({
-        include: [{
-          model: Pkpt, as: 'pkpt',
-          where: { ...pkptWhere, keirbanan: kb },
-          attributes: []
-        }]
-      });
+      // Total PKPT (hanya PKPT sungguhan)
+      const totalPkpt = await Pkpt.count({ where: { ...where, sumber: 'PKPT' } });
 
+      // Penugasan (PKPT + Non-PKPT)
+      const totalPenugasan = await Penugasan.count({ include: penugasanInc() });
       const penugasanSelesai = await Penugasan.count({
-        where: { status: 'Selesai' },
-        include: [{
-          model: Pkpt, as: 'pkpt',
-          where: { ...pkptWhere, keirbanan: kb },
-          attributes: []
-        }]
+        where: { status: 'Selesai' }, include: penugasanInc()
       });
 
-      // Total rekomendasi
-      const totalRek = await Rekomendasi.count({
-        include: [{
-          model: Temuan, as: 'temuan',
-          attributes: [],
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: [],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: [],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: { ...pkptWhere, keirbanan: kb },
-                attributes: []
-              }]
-            }]
-          }]
-        }]
-      });
-
+      // Rekomendasi
+      const totalRek = await Rekomendasi.count({ include: [rantaiTemuan(where)] });
       const rekSelesai = await Rekomendasi.count({
         where: { status: 'Selesai' },
-        include: [{
-          model: Temuan, as: 'temuan',
-          attributes: [],
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: [],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: [],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: { ...pkptWhere, keirbanan: kb },
-                attributes: []
-              }]
-            }]
-          }]
-        }]
+        include: [rantaiTemuan(where)]
       });
 
-      // Total TGR
+      // TGR
       const tgrStats = await Rekomendasi.findOne({
         attributes: [
           [sequelize.fn('SUM', sequelize.col('nilai_temuan')), 'total'],
           [sequelize.fn('SUM', sequelize.col('nilai_terlunasi')), 'terlunasi']
         ],
         where: { adalah_tgr: true },
-        include: [{
-          model: Temuan, as: 'temuan',
-          attributes: [],
-          include: [{
-            model: DokumenPenugasan, as: 'dokumen',
-            attributes: [],
-            include: [{
-              model: Penugasan, as: 'penugasan',
-              attributes: [],
-              include: [{
-                model: Pkpt, as: 'pkpt',
-                where: { ...pkptWhere, keirbanan: kb },
-                attributes: []
-              }]
-            }]
-          }]
-        }],
+        include: [rantaiTemuan(where)],
         raw: true
       });
 
-      // SPT alert
-      const tigaPuluhHariLalu = new Date();
-      tigaPuluhHariLalu.setDate(tigaPuluhHariLalu.getDate() - 30);
-
-      const sptAlert = await Spt.count({
-        where: { tanggal_mulai: { [Op.lte]: tigaPuluhHariLalu } },
-        include: [{
-          model: Penugasan, as: 'penugasan',
-          attributes: [],
-          include: [{
-            model: Pkpt, as: 'pkpt',
-            where: { ...pkptWhere, keirbanan: kb },
-            attributes: []
-          }]
-        }]
-      });
+      // SPT > 30 hari yang belum ada LHP
+      const sptAlert = await hitungSptBelumLhp(where);
 
       result.push({
         keirbanan: kb,
