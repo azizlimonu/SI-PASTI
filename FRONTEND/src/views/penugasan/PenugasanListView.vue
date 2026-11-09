@@ -60,9 +60,20 @@
         </option>
       </select>
       <select
+        v-model="filterSumber"
+        class="select-field"
+        style="width:150px;"
+        @change="onSumberChange"
+      >
+        <option value="">Semua Sumber</option>
+        <option value="PKPT">PKPT</option>
+        <option value="NON_PKPT">Non-PKPT</option>
+      </select>
+      <select
         v-model="filterPkpt"
         class="select-field"
         style="width:200px;"
+        :disabled="filterSumber === 'NON_PKPT'"
         @change="loadData"
       >
         <option value="">Semua PKPT</option>
@@ -115,7 +126,7 @@
                 <th>No</th>
                 <th>Nama Penugasan</th>
                 <th>Jenis</th>
-                <th>PKPT</th>
+                <th>Sumber</th>
                 <th>Tanggal</th>
                 <th>SPT</th>
                 <th>Status</th>
@@ -139,12 +150,24 @@
                   {{ item.jenis_penugasan }}
                 </td>
                 <td>
-                  <span
-                    v-if="item.pkpt"
-                    style="font-size:0.78rem; color:var(--text-muted);"
-                  >
-                    {{ item.pkpt.tahun }} — Keirbanan {{ item.pkpt.keirbanan }}
-                  </span>
+                  <div v-if="item.pkpt">
+                    <span
+                      :class="`badge badge-${item.pkpt.sumber === 'NON_PKPT' ? 'purple' : 'blue'}`"
+                      >{{ item.pkpt.sumber === 'NON_PKPT' ? 'Non-PKPT' : 'PKPT' }}</span
+                    >
+                    <div
+                      style="font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem;"
+                    >
+                      {{ item.pkpt.tahun }} — Keirbanan
+                      {{ item.pkpt.keirbanan }}
+                    </div>
+                    <div
+                      v-if="item.dasar_penugasan"
+                      style="font-size:0.72rem; color:var(--text-muted);"
+                    >
+                      Dasar: {{ item.dasar_penugasan }}
+                    </div>
+                  </div>
                 </td>
                 <td style="font-size:0.78rem; color:var(--text-muted);">
                   {{ formatDate(item.tanggal_mulai) }}
@@ -285,6 +308,7 @@ const toast = useToast()
 const search = ref('')
 const filterStatus = ref('')
 const filterPkpt = ref('')
+const filterSumber = ref('')
 const showForm = ref(false)
 const showConfirm = ref(false)
 const editItem = ref(null)
@@ -298,8 +322,15 @@ const loadData = () => {
   penugasan.fetchAll({
     search: search.value || undefined,
     status: filterStatus.value || undefined,
-    pkpt_id: filterPkpt.value || undefined
+    pkpt_id: filterPkpt.value || undefined,
+    sumber: filterSumber.value || undefined
   })
+}
+
+const onSumberChange = () => {
+  if (filterSumber.value === 'NON_PKPT') filterPkpt.value = ''
+  penugasan.pagination.page = 1
+  loadData()
 }
 
 const handleSearch = () => {

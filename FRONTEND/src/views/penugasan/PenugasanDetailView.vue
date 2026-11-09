@@ -31,8 +31,12 @@
           <div>
             <h1 class="page-title">{{ data.nama_penugasan }}</h1>
             <p class="page-subtitle">
-              {{ data.jenis_penugasan }} — {{ data.pkpt?.tahun }} Keirbanan
-              {{ data.pkpt?.keirbanan }}
+              {{ data.jenis_penugasan }} —
+              {{ data.pkpt?.sumber === 'NON_PKPT' ? 'Non-PKPT' : 'PKPT' }}
+              {{ data.pkpt?.tahun }} Keirbanan {{ data.pkpt?.keirbanan }}
+              <span v-if="data.dasar_penugasan">
+                · Dasar: {{ data.dasar_penugasan }}</span
+              >
             </p>
           </div>
         </div>
