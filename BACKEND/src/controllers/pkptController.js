@@ -15,6 +15,7 @@ const getPkpt = async (req, res) => {
     const where = { ...getKeirbanFilter(user, keirbanan) };
     if (tahun) where.tahun = tahun;
     if (status) where.status = status;
+    where.sumber = 'PKPT'; // "wadah" Non-PKPT tidak ditampilkan sebagai PKPT
 
     const { page = 1, limit = 25 } = req.query
     const offset = (parseInt(page) - 1) * parseInt(limit)
@@ -90,6 +91,15 @@ const getPkptById = async (req, res) => {
     });
 
     if (!pkpt) {
+      return res.status(404).json({
+        success: false,
+        message: 'PKPT tidak ditemukan.'
+      });
+    }
+
+    // Cek akses keirbanan
+    // "Wadah" Non-PKPT bukan PKPT sungguhan
+    if (pkpt.sumber !== 'PKPT') {
       return res.status(404).json({
         success: false,
         message: 'PKPT tidak ditemukan.'
@@ -184,7 +194,7 @@ const updatePkpt = async (req, res) => {
 
     const pkpt = await Pkpt.findByPk(req.params.id);
 
-    if (!pkpt) {
+    if (!pkpt || pkpt.sumber !== 'PKPT') {
       return res.status(404).json({
         success: false,
         message: 'PKPT tidak ditemukan.'
@@ -237,7 +247,7 @@ const deletePkpt = async (req, res) => {
       include: [{ model: Penugasan, as: 'penugasans' }]
     });
 
-    if (!pkpt) {
+    if (!pkpt || pkpt.sumber !== 'PKPT') {
       return res.status(404).json({
         success: false,
         message: 'PKPT tidak ditemukan.'

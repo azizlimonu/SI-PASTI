@@ -11,13 +11,14 @@ const { Op } = require('sequelize');
 // ═══════════════════════════════════════════
 const getPenugasan = async (req, res) => {
   try {
-    const { pkpt_id, status, search, tahun } = req.query
+    const { pkpt_id, status, search, tahun, sumber } = req.query
     const user = req.user;
 
     // Build where untuk PKPT (filter keirbanan lewat PKPT)
     const pkptWhere = { ...getKeirbanFilter(user) };
     if (tahun) pkptWhere.tahun = tahun;
     if (pkpt_id) pkptWhere.id = pkpt_id;
+    if (['PKPT', 'NON_PKPT'].includes(sumber)) pkptWhere.sumber = sumber;
 
     const where = {};
     if (status) where.status = status;
@@ -38,7 +39,7 @@ const getPenugasan = async (req, res) => {
           model: Pkpt,
           as: 'pkpt',
           where: pkptWhere,
-          attributes: ['id', 'tahun', 'nama_program', 'keirbanan']
+          attributes: ['id', 'tahun', 'nama_program', 'keirbanan', 'sumber']
         },
         {
           model: Spt,
@@ -94,7 +95,7 @@ const getPenugasanById = async (req, res) => {
         {
           model: Pkpt,
           as: 'pkpt',
-          attributes: ['id', 'tahun', 'nama_program', 'keirbanan', 'status']
+          attributes: ['id', 'tahun', 'nama_program', 'keirbanan', 'status', 'sumber']
         },
         {
           model: Spt,
@@ -150,38 +151,90 @@ const getPenugasanById = async (req, res) => {
 const createPenugasan = async (req, res) => {
   try {
     const {
-      pkpt_id, nama_penugasan, jenis_penugasan,
+      pkpt_id, nama_penugasan, jenis_penugasan, dasar_penugasan,
       tanggal_mulai, tanggal_selesai
     } = req.body;
+    const sumber = req.body.sumber === 'NON_PKPT' ? 'NON_PKPT' : 'PKPT';
     const user = req.user;
 
-    if (!pkpt_id || !nama_penugasan || !jenis_penugasan) {
+    if (!nama_penugasan || !jenis_penugasan) {
       return res.status(400).json({
         success: false,
-        message: 'PKPT, nama penugasan, dan jenis penugasan wajib diisi.'
+        message: 'Nama penugasan dan jenis penugasan wajib diisi.'
       });
     }
 
-    // Cek PKPT exists dan akses keirbanan
-    const pkpt = await Pkpt.findByPk(pkpt_id);
-    if (!pkpt) {
-      return res.status(404).json({
-        success: false,
-        message: 'PKPT tidak ditemukan.'
-      });
-    }
+    let pkpt;
 
-    if (user.keirbanan !== 'ALL' && pkpt.keirbanan !== user.keirbanan) {
-      return res.status(403).json({
-        success: false,
-        message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
+    if (sumber === 'PKPT') {
+      if (!pkpt_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'PKPT wajib dipilih.'
+        });
+      }
+
+      pkpt = await Pkpt.findByPk(pkpt_id);
+      // "Wadah" Non-PKPT bukan PKPT sungguhan, tidak boleh dipilih di sini
+      if (!pkpt || pkpt.sumber !== 'PKPT') {
+        return res.status(404).json({
+          success: false,
+          message: 'PKPT tidak ditemukan.'
+        });
+      }
+
+      if (user.keirbanan !== 'ALL' && pkpt.keirbanan !== user.keirbanan) {
+        return res.status(403).json({
+          success: false,
+          message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
+        });
+      }
+    } else {
+      // NON PKPT: tanpa induk PKPT. Dikelompokkan otomatis ke "wadah" per tahun + keirbanan.
+      const tahun = parseInt(req.body.tahun, 10);
+      if (!tahun || tahun < 2000 || tahun > 2100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tahun penugasan Non-PKPT wajib diisi (2000-2100).'
+        });
+      }
+
+      // Admin keirbanan terkunci ke keirbanannya sendiri; user 'ALL' wajib memilih keirbanan
+      if (user.keirbanan !== 'ALL' && req.body.keirbanan && req.body.keirbanan !== user.keirbanan) {
+        return res.status(403).json({
+          success: false,
+          message: `Akses ditolak. Anda hanya bisa mengakses Keirbanan ${user.keirbanan}.`
+        });
+      }
+      const keirbanan = user.keirbanan === 'ALL' ? req.body.keirbanan : user.keirbanan;
+      if (!['I', 'II', 'III', 'IV', 'V'].includes(keirbanan)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Keirbanan wajib dipilih (I-V).'
+        });
+      }
+
+      pkpt = await Pkpt.findOne({
+        where: { sumber: 'NON_PKPT', tahun, keirbanan },
+        order: [['id', 'ASC']]
       });
+      if (!pkpt) {
+        pkpt = await Pkpt.create({
+          tahun,
+          keirbanan,
+          sumber: 'NON_PKPT',
+          nama_program: `Penugasan Non-PKPT Tahun ${tahun} - Keirbanan ${keirbanan}`,
+          status: 'Aktif',
+          created_by: user.id
+        });
+      }
     }
 
     const penugasan = await Penugasan.create({
-      pkpt_id,
+      pkpt_id: pkpt.id,
       nama_penugasan,
       jenis_penugasan,
+      dasar_penugasan: dasar_penugasan || null,
       tanggal_mulai: tanggal_mulai || null,
       tanggal_selesai: tanggal_selesai || null,
       status: 'Belum Mulai',
@@ -193,7 +246,7 @@ const createPenugasan = async (req, res) => {
       user.nama,
       'Tambah Penugasan',
       'Penugasan',
-      `${nama_penugasan} — PKPT ${pkpt.tahun} Keirbanan ${pkpt.keirbanan}`,
+      `${nama_penugasan} — ${sumber === 'PKPT' ? 'PKPT' : 'Non-PKPT'} ${pkpt.tahun} Keirbanan ${pkpt.keirbanan}`,
       pkpt.keirbanan
     );
 
@@ -217,7 +270,7 @@ const updatePenugasan = async (req, res) => {
   try {
     const {
       nama_penugasan, jenis_penugasan,
-      tanggal_mulai, tanggal_selesai, status
+      tanggal_mulai, tanggal_selesai, status, dasar_penugasan
     } = req.body;
     const user = req.user;
 
@@ -243,6 +296,9 @@ const updatePenugasan = async (req, res) => {
     await penugasan.update({
       nama_penugasan: nama_penugasan || penugasan.nama_penugasan,
       jenis_penugasan: jenis_penugasan || penugasan.jenis_penugasan,
+      dasar_penugasan: dasar_penugasan !== undefined
+        ? (dasar_penugasan || null)
+        : penugasan.dasar_penugasan,
       tanggal_mulai: tanggal_mulai || penugasan.tanggal_mulai,
       tanggal_selesai: tanggal_selesai || penugasan.tanggal_selesai,
       status: status || penugasan.status

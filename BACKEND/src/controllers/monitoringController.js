@@ -17,9 +17,10 @@ const getDashboard = async (req, res) => {
     if (tahun) pkptWhere.tahun = tahun;
 
     // Total PKPT
-    const totalPkpt = await Pkpt.count({ where: pkptWhere });
+    // Hanya PKPT sungguhan (wadah Non-PKPT tidak dihitung sebagai program PKPT)
+    const totalPkpt = await Pkpt.count({ where: { ...pkptWhere, sumber: 'PKPT' } });
     const pkptAktif = await Pkpt.count({
-      where: { ...pkptWhere, status: 'Aktif' }
+      where: { ...pkptWhere, sumber: 'PKPT', status: 'Aktif' }
     });
 
     // Total Penugasan
@@ -567,7 +568,7 @@ const getProgressKeirbanan = async (req, res) => {
     for (const kb of keirbanans) {
       // Total PKPT
       const totalPkpt = await Pkpt.count({
-        where: { ...pkptWhere, keirbanan: kb }
+        where: { ...pkptWhere, keirbanan: kb, sumber: 'PKPT' }
       });
 
       // Total penugasan
