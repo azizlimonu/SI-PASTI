@@ -1,8 +1,11 @@
 const {
   Temuan, Rekomendasi, DokumenPenugasan,
   Penugasan, Pkpt, Pihak, User, sequelize,
-  TindakLanjut, BuktiTL
+  TindakLanjut, BuktiTL,
+  JenisTemuan, SubKelompokTemuan, KategoriTemuan
 } = require('../models');
+const { InputError, resolveKodeKategori } = require('../utils/kodeTemuan');
+const KATEGORI_WAJIB = true;
 const { bolehAkses, keirbananDariDokumen, tolakAkses } = require('../utils/akses');
 const writeLog = require('../utils/writelog');
 
@@ -29,6 +32,16 @@ const getTemuanByDokumen = async (req, res) => {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'nama'] },
         {
+          model: JenisTemuan,
+          as: 'jenisTemuan',
+          attributes: ['id', 'kode', 'uraian'],
+          include: [
+            { model: SubKelompokTemuan, as: 'subKelompok', attributes: ['id', 'kode', 'nama'] },
+            { model: KategoriTemuan, as: 'kategori', attributes: ['id', 'kode', 'nama'] }
+          ]
+        },
+        { model: KategoriTemuan, as: 'kategori', attributes: ['id', 'kode', 'nama'] },
+        {
           model: Rekomendasi,
           as: 'rekomendasis',
           include: [
@@ -49,6 +62,7 @@ const getTemuanByDokumen = async (req, res) => {
 
     const data = rows.map(t => {
       const tj = t.toJSON();
+      tj.kategori_efektif = tj.jenisTemuan?.kategori || tj.kategori || null;
       tj.rekomendasis = (tj.rekomendasis || []).map(r => {
         r.ada_bukti_tl = (r.tindakLanjuts || []).some(
           tl => tl.status_penerimaan === 'Diterima' && tl.buktis && tl.buktis.length > 0
@@ -130,11 +144,33 @@ const createTemuan = async (req, res) => {
     const hasil = [];
 
     for (const t of temuan) {
-      if (!t.judul_temuan || !t.uraian_temuan) continue;
+      if (!t.uraian_temuan) continue;
+
+      // Kode temuan baku (jenis_temuan_id) ATAU kategori untuk temuan manual (kategori_temuan_id)
+      let kode;
+      try {
+        kode = await resolveKodeKategori(
+          t,
+          dokumen.penugasan.jenis_penugasan,
+          { kategoriWajib: KATEGORI_WAJIB, transaction }
+        );
+      } catch (err) {
+        if (err instanceof InputError) {
+          await transaction.rollback();
+          return res.status(err.status).json({ success: false, message: err.message });
+        }
+        throw err;
+      }
+
+      // Judul boleh kosong kalau memakai kode baku: dipakai uraian kodenya
+      const judul = t.judul_temuan || kode.uraian_kode;
+      if (!judul) continue;
 
       const temuanBaru = await Temuan.create({
         dokumen_penugasan_id,
-        judul_temuan: t.judul_temuan,
+        jenis_temuan_id: kode.jenis_temuan_id,
+        kategori_temuan_id: kode.kategori_temuan_id,
+        judul_temuan: String(judul).slice(0, 255),
         uraian_temuan: t.uraian_temuan,
         created_by: user.id
       }, { transaction });
@@ -223,9 +259,34 @@ const updateTemuan = async (req, res) => {
       });
     }
 
+    // Kode/kategori hanya diubah bila dikirim. jenis_temuan_id: null = lepas kode (jadi temuan manual).
+    const perubahanKode = {};
+    const kirimJenis = Object.prototype.hasOwnProperty.call(req.body, 'jenis_temuan_id');
+    const kirimKategori = Object.prototype.hasOwnProperty.call(req.body, 'kategori_temuan_id');
+    if (kirimJenis || kirimKategori) {
+      try {
+        const kode = await resolveKodeKategori(
+          {
+            jenis_temuan_id: kirimJenis ? (req.body.jenis_temuan_id || null) : temuan.jenis_temuan_id,
+            kategori_temuan_id: kirimKategori ? (req.body.kategori_temuan_id || null) : temuan.kategori_temuan_id
+          },
+          temuan.dokumen.penugasan.jenis_penugasan,
+          { kategoriWajib: KATEGORI_WAJIB }
+        );
+        perubahanKode.jenis_temuan_id = kode.jenis_temuan_id;
+        perubahanKode.kategori_temuan_id = kode.kategori_temuan_id;
+      } catch (err) {
+        if (err instanceof InputError) {
+          return res.status(err.status).json({ success: false, message: err.message });
+        }
+        throw err;
+      }
+    }
+
     await temuan.update({
       judul_temuan: judul_temuan || temuan.judul_temuan,
-      uraian_temuan: uraian_temuan || temuan.uraian_temuan
+      uraian_temuan: uraian_temuan || temuan.uraian_temuan,
+      ...perubahanKode
     });
 
     await writeLog(

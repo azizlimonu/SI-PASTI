@@ -106,7 +106,19 @@
               >
                 {{ temuan.uraian_temuan }}
               </p>
-              <div style="display:flex; gap:0.5rem; margin-top:0.625rem;">
+              <div
+                style="display:flex; gap:0.5rem; margin-top:0.625rem; flex-wrap:wrap;"
+              >
+                <span
+                  v-if="temuan.jenisTemuan"
+                  class="badge badge-purple"
+                  :title="temuan.jenisTemuan.uraian"
+                  >{{ temuan.jenisTemuan.kode }}</span
+                >
+                <span
+                  :class="temuan.kategori_efektif ? 'badge badge-green' : 'badge badge-gray'"
+                  >{{ temuan.kategori_efektif?.nama || 'Belum dikategorikan' }}</span
+                >
                 <span class="badge badge-blue"
                   >{{ temuan.rekomendasis?.length || 0 }} rekomendasi</span
                 >
@@ -160,6 +172,7 @@
     >
       <TemuanForm
         :loading="submitting"
+        :jenis-penugasan="jenisPenugasan"
         @submit="handleSubmit"
         @cancel="showForm = false"
       />
@@ -171,6 +184,11 @@
         @submit.prevent="handleEditSubmit"
         style="display:flex; flex-direction:column; gap:1rem;"
       >
+        <KodeTemuanPicker
+          v-if="showEditForm"
+          v-model="editForm.kode"
+          :jenis-penugasan="jenisPenugasan"
+        />
         <div>
           <label class="input-label">Judul Temuan</label>
           <input
@@ -225,10 +243,12 @@ import { dokumenService } from '@/services/dokumenService'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
 import TemuanForm from '@/components/lhp/TemuanForm.vue'
+import KodeTemuanPicker from '@/components/lhp/KodeTemuanPicker.vue'
 
 const props = defineProps({
   penugasanId: { type: Number, required: true },
-  dokumenList: { type: Array, default: () => [] }
+  dokumenList: { type: Array, default: () => [] },
+  jenisPenugasan: { type: String, default: '' }
 })
 
 const auth = useAuthStore()
@@ -244,7 +264,11 @@ const showEditForm = ref(false)
 const showConfirm = ref(false)
 const deleteTarget = ref(null)
 const editTarget = ref(null)
-const editForm = ref({ judul_temuan: '', uraian_temuan: '' })
+const editForm = ref({
+  judul_temuan: '',
+  uraian_temuan: '',
+  kode: { mode: 'kode', jenis_temuan_id: null, kategori_temuan_id: null }
+})
 
 const lhpList = computed(() =>
   props.dokumenList.filter(d => d.jenis_dokumen === 'LHP')
@@ -276,14 +300,32 @@ const handleSubmit = async (data) => {
 
 const openEdit = (temuan) => {
   editTarget.value = temuan
-  editForm.value = { judul_temuan: temuan.judul_temuan, uraian_temuan: temuan.uraian_temuan }
+  editForm.value = {
+    judul_temuan: temuan.judul_temuan,
+    uraian_temuan: temuan.uraian_temuan,
+    kode: temuan.jenis_temuan_id
+      ? { mode: 'kode', jenis_temuan_id: temuan.jenis_temuan_id, kategori_temuan_id: null }
+      : { mode: temuan.kategori_temuan_id ? 'manual' : 'kode', jenis_temuan_id: null, kategori_temuan_id: temuan.kategori_temuan_id || null }
+  }
   showEditForm.value = true
 }
 
 const handleEditSubmit = async () => {
   submitting.value = true
   try {
-    await dokumenService.updateTemuan(editTarget.value.id, editForm.value)
+    // Kode/kategori hanya dikirim kalau ada pilihan; temuan lama yang belum dipilih dibiarkan apa adanya.
+    const k = editForm.value.kode
+    const payload = {
+      judul_temuan: editForm.value.judul_temuan,
+      uraian_temuan: editForm.value.uraian_temuan
+    }
+    if (k.mode === 'kode' && k.jenis_temuan_id) {
+      payload.jenis_temuan_id = k.jenis_temuan_id
+    } else if (k.mode === 'manual' && k.kategori_temuan_id) {
+      payload.jenis_temuan_id = null
+      payload.kategori_temuan_id = k.kategori_temuan_id
+    }
+    await dokumenService.updateTemuan(editTarget.value.id, payload)
     toast.success('Temuan berhasil diupdate.')
     showEditForm.value = false
     await loadTemuan()

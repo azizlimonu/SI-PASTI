@@ -1,8 +1,9 @@
 -- ============================================================
 -- SI-PASTI — 01_schema.sql
 -- Skema database (dihasilkan dari model Sequelize di BACKEND/src/models)
--- Sudah termasuk migrasi 001_non_pkpt (pkpt.sumber, penugasans.dasar_penugasan).
+-- Sudah termasuk migrasi 001_non_pkpt dan 002_kode_temuan.
 -- Jalankan:  mysql -u root -p < 01_schema.sql
+-- Setelah itu isi master kode temuan:  npm run import-kode-temuan  (di folder BACKEND)
 -- ============================================================
 -- Hapus tanda -- pada baris di bawah hanya jika ingin reset total:
 -- DROP DATABASE IF EXISTS si_pasti;
@@ -41,6 +42,48 @@ CREATE TABLE `dokumen_penugasans` (
   KEY `created_by` (`created_by`),
   CONSTRAINT `dokumen_penugasans_ibfk_1` FOREIGN KEY (`penugasan_id`) REFERENCES `penugasans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `dokumen_penugasans_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `jenis_temuan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sub_kelompok_id` int(11) NOT NULL,
+  `kategori_id` int(11) NOT NULL,
+  `kode` varchar(12) NOT NULL,
+  `uraian` varchar(500) NOT NULL,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `kode` (`kode`),
+  KEY `sub_kelompok_id` (`sub_kelompok_id`),
+  KEY `kategori_id` (`kategori_id`),
+  CONSTRAINT `jenis_temuan_ibfk_1` FOREIGN KEY (`sub_kelompok_id`) REFERENCES `sub_kelompok_temuan` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `jenis_temuan_ibfk_2` FOREIGN KEY (`kategori_id`) REFERENCES `kategori_temuan` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `kategori_temuan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `kode` varchar(5) NOT NULL,
+  `nama` varchar(150) NOT NULL,
+  `keterangan` varchar(500) DEFAULT NULL,
+  `urutan` int(11) NOT NULL DEFAULT 0,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `kode` (`kode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `kelompok_temuan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `kode` varchar(5) NOT NULL,
+  `nama` varchar(255) NOT NULL,
+  `catatan` varchar(255) DEFAULT NULL,
+  `berlaku_untuk` varchar(255) DEFAULT NULL,
+  `sumber` varchar(255) DEFAULT NULL,
+  `urutan` int(11) NOT NULL DEFAULT 0,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `kode` (`kode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `log_aktivitas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -173,9 +216,25 @@ CREATE TABLE `spts` (
   CONSTRAINT `spts_ibfk_1` FOREIGN KEY (`penugasan_id`) REFERENCES `penugasans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `spts_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `sub_kelompok_temuan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `kelompok_id` int(11) NOT NULL,
+  `kode` varchar(12) NOT NULL,
+  `nama` varchar(255) NOT NULL,
+  `benang_merah` text DEFAULT NULL,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `kode` (`kode`),
+  KEY `kelompok_id` (`kelompok_id`),
+  CONSTRAINT `sub_kelompok_temuan_ibfk_1` FOREIGN KEY (`kelompok_id`) REFERENCES `kelompok_temuan` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `temuan` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `dokumen_penugasan_id` int(11) NOT NULL,
+  `jenis_temuan_id` int(11) DEFAULT NULL,
+  `kategori_temuan_id` int(11) DEFAULT NULL,
   `judul_temuan` varchar(255) NOT NULL,
   `uraian_temuan` text NOT NULL,
   `created_by` int(11) DEFAULT NULL,
@@ -183,9 +242,13 @@ CREATE TABLE `temuan` (
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `dokumen_penugasan_id` (`dokumen_penugasan_id`),
+  KEY `jenis_temuan_id` (`jenis_temuan_id`),
+  KEY `kategori_temuan_id` (`kategori_temuan_id`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `temuan_ibfk_1` FOREIGN KEY (`dokumen_penugasan_id`) REFERENCES `dokumen_penugasans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `temuan_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `temuan_ibfk_2` FOREIGN KEY (`jenis_temuan_id`) REFERENCES `jenis_temuan` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `temuan_ibfk_3` FOREIGN KEY (`kategori_temuan_id`) REFERENCES `kategori_temuan` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `temuan_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE `tims` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

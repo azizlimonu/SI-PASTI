@@ -1,0 +1,786 @@
+{
+ "sumber": "Permenpan RB No. 42 Tahun 2011 (Lampiran 2.1 & 2.2)",
+ "kategori": [
+  {
+   "kode": "KRG",
+   "nama": "Kerugian Negara/Daerah",
+   "keterangan": "Kerugian sudah terjadi dan dapat dihitung nilainya (dasar TGR)."
+  },
+  {
+   "kode": "PKR",
+   "nama": "Potensi Kerugian Negara/Daerah",
+   "keterangan": "Kerugian belum terjadi tetapi berpotensi terjadi bila tidak segera ditindaklanjuti."
+  },
+  {
+   "kode": "KPN",
+   "nama": "Kekurangan Penerimaan Negara/Daerah",
+   "keterangan": "Hak penerimaan negara/daerah yang seharusnya masuk tetapi tidak masuk."
+  },
+  {
+   "kode": "ADM",
+   "nama": "Administratif",
+   "keterangan": "Penyimpangan prosedur/administrasi tanpa kerugian keuangan: kelengkapan dokumen, ketertiban administrasi, ketepatan waktu."
+  },
+  {
+   "kode": "PID",
+   "nama": "Indikasi Tindak Pidana",
+   "keterangan": "Temuan yang mengandung unsur pidana dan dilimpahkan ke instansi penyidik."
+  },
+  {
+   "kode": "SPI",
+   "nama": "Kelemahan Pengendalian Intern",
+   "keterangan": "Kelemahan sistem pengendalian intern: SOP, pemisahan fungsi, pencatatan, pengawasan."
+  },
+  {
+   "kode": "E3",
+   "nama": "Ketidakekonomisan, Ketidakefisienan, dan Ketidakefektifan (3E)",
+   "keterangan": "Pemborosan, input tidak efisien, atau tujuan kegiatan tidak tercapai."
+  },
+  {
+   "kode": "RKK",
+   "nama": "Perencanaan, Penganggaran, dan Kinerja",
+   "keterangan": "Temuan pada dokumen perencanaan, penganggaran, serta pelaksanaan dan capaian kinerja."
+  },
+  {
+   "kode": "LNN",
+   "nama": "Lainnya",
+   "keterangan": "Temuan yang tidak termasuk kategori lain."
+  }
+ ],
+ "kelompok": [
+  {
+   "kode": "1",
+   "nama": "Temuan Ketidakpatuhan Terhadap Peraturan",
+   "catatan": null,
+   "berlaku_untuk": null,
+   "sumber": "Permenpan RB No. 42 Tahun 2011 (Lampiran 2.1 & 2.2)"
+  },
+  {
+   "kode": "2",
+   "nama": "Temuan Kelemahan Sistem Pengendalian Intern",
+   "catatan": null,
+   "berlaku_untuk": null,
+   "sumber": "Permenpan RB No. 42 Tahun 2011 (Lampiran 2.1 & 2.2)"
+  },
+  {
+   "kode": "3",
+   "nama": "Temuan 3E (Ekonomis, Efisien, Efektif)",
+   "catatan": "Umumnya pada audit kinerja",
+   "berlaku_untuk": null,
+   "sumber": "Permenpan RB No. 42 Tahun 2011 (Lampiran 2.1 & 2.2)"
+  },
+  {
+   "kode": "4",
+   "nama": "Temuan Penugasan Non-Audit (Reviu, Evaluasi, Monitoring, Assistensi, Pendampingan)",
+   "catatan": "Usulan awal, dapat diubah langsung di database",
+   "berlaku_untuk": null,
+   "sumber": "Usulan awal (bukan dari Permenpan) - dapat diubah langsung di database"
+  }
+ ],
+ "sub_kelompok": [
+  {
+   "kode": "1.01.00",
+   "kelompok": "1",
+   "nama": "Kerugian Negara/Daerah",
+   "benang_merah": "Dana sudah keluar dan kerugian sudah terjadi secara nyata, dapat dihitung nilainya. Rekomendasi utama mengarah ke penyetoran ke kas negara/daerah."
+  },
+  {
+   "kode": "1.02.00",
+   "kelompok": "1",
+   "nama": "Potensi Kerugian Negara/Daerah",
+   "benang_merah": "Kerugian belum terjadi namun kondisi yang ada berpotensi menimbulkan kerugian di masa mendatang jika tidak segera ditindaklanjuti."
+  },
+  {
+   "kode": "1.03.00",
+   "kelompok": "1",
+   "nama": "Kekurangan Penerimaan Negara/Daerah",
+   "benang_merah": "Negara/daerah kehilangan hak penerimaan yang seharusnya masuk ke kas — bukan uang keluar seperti 1.01, melainkan uang yang tidak pernah masuk."
+  },
+  {
+   "kode": "1.04.00",
+   "kelompok": "1",
+   "nama": "Administrasi",
+   "benang_merah": "Penyimpangan prosedur/peraturan yang tidak menimbulkan kerugian uang, potensi kerugian, maupun kekurangan penerimaan. Murni penyimpangan tata kelola dan tertib administrasi."
+  },
+  {
+   "kode": "1.05.00",
+   "kelompok": "1",
+   "nama": "Indikasi Tindak Pidana",
+   "benang_merah": "Temuan mengandung unsur pidana. Tidak diselesaikan melalui rekomendasi biasa, melainkan dilimpahkan ke instansi penyidik (Kepolisian, Kejaksaan, atau KPK)."
+  },
+  {
+   "kode": "2.01.00",
+   "kelompok": "2",
+   "nama": "Kelemahan SPI Akuntansi dan Pelaporan",
+   "benang_merah": "Sistem pencatatan dan pelaporan keuangan tidak berjalan dengan benar — data tidak akurat, laporan terlambat, atau sistem informasi tidak memadai."
+  },
+  {
+   "kode": "2.02.00",
+   "kelompok": "2",
+   "nama": "Kelemahan SPI Pelaksanaan Anggaran",
+   "benang_merah": "Mekanisme pengendalian atas proses perencanaan, pemungutan, dan pelaksanaan anggaran tidak berjalan — sehingga pendapatan dan belanja tidak terkendali dengan baik."
+  },
+  {
+   "kode": "2.03.00",
+   "kelompok": "2",
+   "nama": "Kelemahan Struktur Pengendalian Intern",
+   "benang_merah": "Struktur organisasi dan prosedur pengendalian tidak dirancang atau tidak berjalan dengan baik — tidak ada SOP, tidak ada pemisahan fungsi, tidak ada pengawas internal."
+  },
+  {
+   "kode": "3.01.00",
+   "kelompok": "3",
+   "nama": "Ketidakhematan / Pemborosan / Ketidakekonomisan",
+   "benang_merah": "Input yang digunakan melebihi yang seharusnya diperlukan — membeli lebih banyak, lebih mahal, atau dengan kualitas berlebih dibanding standar yang wajar."
+  },
+  {
+   "kode": "3.02.00",
+   "kelompok": "3",
+   "nama": "Ketidakefisienan",
+   "benang_merah": "Perbandingan input dan output tidak optimal — untuk menghasilkan satu satuan output, dibutuhkan input yang lebih besar atau lebih tinggi dari yang seharusnya."
+  },
+  {
+   "kode": "3.03.00",
+   "kelompok": "3",
+   "nama": "Ketidakefektifan",
+   "benang_merah": "Kegiatan atau program tidak mencapai tujuan yang ditetapkan — dana terserap, barang dibeli, kegiatan berjalan, tapi hasilnya tidak seperti yang diharapkan."
+  },
+  {
+   "kode": "4.01.00",
+   "kelompok": "4",
+   "nama": "Perencanaan dan Penganggaran",
+   "benang_merah": "Dokumen perencanaan dan penganggaran tidak sinkron, tidak sesuai ketentuan, atau tidak didukung analisis yang memadai."
+  },
+  {
+   "kode": "4.02.00",
+   "kelompok": "4",
+   "nama": "Pelaksanaan dan Capaian Kinerja",
+   "benang_merah": "Pelaksanaan kegiatan dan capaian kinerja tidak sesuai rencana atau target yang ditetapkan."
+  },
+  {
+   "kode": "4.03.00",
+   "kelompok": "4",
+   "nama": "Tata Kelola, SOP, dan Sumber Daya Manusia",
+   "benang_merah": "Tata kelola, prosedur, kapasitas SDM, dan koordinasi belum mendukung pelaksanaan kegiatan."
+  },
+  {
+   "kode": "4.04.00",
+   "kelompok": "4",
+   "nama": "Administratif",
+   "benang_merah": "Kelengkapan, ketertiban, dan ketepatan waktu administrasi, tanpa dampak kerugian keuangan."
+  }
+ ],
+ "jenis_temuan": [
+  {
+   "kode": "1.01.01",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Belanja dan/atau pengadaan barang/jasa fiktif"
+  },
+  {
+   "kode": "1.01.02",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Rekanan pengadaan barang/jasa tidak menyelesaikan pekerjaan"
+  },
+  {
+   "kode": "1.01.03",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Kekurangan volume pekerjaan dan/atau barang"
+  },
+  {
+   "kode": "1.01.04",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Kelebihan pembayaran selain kekurangan volume pekerjaan dan/atau barang"
+  },
+  {
+   "kode": "1.01.05",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Pemahalan harga (Mark up)"
+  },
+  {
+   "kode": "1.01.06",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Penggunaan uang/barang untuk kepentingan pribadi"
+  },
+  {
+   "kode": "1.01.07",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Pembayaran honorarium dan/atau biaya perjalanan dinas ganda dan/atau melebihi standar yang ditetapkan"
+  },
+  {
+   "kode": "1.01.08",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Spesifikasi barang/jasa yang diterima tidak sesuai dengan kontrak"
+  },
+  {
+   "kode": "1.01.09",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Belanja tidak sesuai atau melebihi ketentuan"
+  },
+  {
+   "kode": "1.01.10",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Pengembalian pinjaman/piutang atau dana bergulir macet"
+  },
+  {
+   "kode": "1.01.11",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Kelebihan penetapan dan pembayaran restitusi pajak atau penetapan kompensasi kerugian"
+  },
+  {
+   "kode": "1.01.12",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Penjualan/pertukaran/penghapusan aset negara/daerah tidak sesuai ketentuan dan merugikan negara/daerah"
+  },
+  {
+   "kode": "1.01.13",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Pengenaan ganti kerugian negara belum/tidak dilaksanakan sesuai ketentuan"
+  },
+  {
+   "kode": "1.01.14",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Entitas belum/tidak melaksanakan tuntutan perbendaharaan (TP) sesuai ketentuan"
+  },
+  {
+   "kode": "1.01.15",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Penghapusan hak tagih tidak sesuai ketentuan"
+  },
+  {
+   "kode": "1.01.16",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Pelanggaran ketentuan pemberian diskon penjualan"
+  },
+  {
+   "kode": "1.01.17",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Penentuan HPP terlalu rendah sehingga harga jual lebih rendah dari yang seharusnya"
+  },
+  {
+   "kode": "1.01.18",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Jaminan pelaksanaan dalam pelaksanaan pekerjaan, pemanfaatan barang dan pemberian fasilitas tidak dapat dicairkan"
+  },
+  {
+   "kode": "1.01.19",
+   "sub_kelompok": "1.01.00",
+   "kategori": "KRG",
+   "uraian": "Penyetoran penerimaan negara/daerah dengan bukti fiktif"
+  },
+  {
+   "kode": "1.02.01",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Kelebihan pembayaran dalam pengadaan barang/jasa tetapi pembayaran pekerjaan belum dilakukan sebagian atau seluruhnya"
+  },
+  {
+   "kode": "1.02.02",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Rekanan belum melaksanakan kewajiban pemeliharaan barang hasil pengadaan yang telah rusak selama masa pemeliharaan"
+  },
+  {
+   "kode": "1.02.03",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Aset dikuasai pihak lain"
+  },
+  {
+   "kode": "1.02.04",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Pembelian aset yang berstatus sengketa"
+  },
+  {
+   "kode": "1.02.05",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Aset tidak diketahui keberadaannya"
+  },
+  {
+   "kode": "1.02.06",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Pemberian jaminan pelaksanaan dalam pelaksanaan pekerjaan, pemanfaatan barang dan pemberian fasilitas tidak sesuai ketentuan"
+  },
+  {
+   "kode": "1.02.07",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Pihak ketiga belum melaksanakan kewajiban untuk menyerahkan aset kepada negara/daerah"
+  },
+  {
+   "kode": "1.02.08",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Piutang/pinjaman atau dana bergulir yang berpotensi tidak tertagih"
+  },
+  {
+   "kode": "1.02.09",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Penghapusan piutang tidak sesuai ketentuan"
+  },
+  {
+   "kode": "1.02.10",
+   "sub_kelompok": "1.02.00",
+   "kategori": "PKR",
+   "uraian": "Pencairan anggaran pada akhir tahun anggaran untuk pekerjaan yang belum selesai"
+  },
+  {
+   "kode": "1.03.01",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Penerimaan negara/daerah atau denda keterlambatan pekerjaan belum/tidak ditetapkan/dipungut/diterima/disetor ke kas negara/daerah"
+  },
+  {
+   "kode": "1.03.02",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Penggunaan langsung penerimaan negara/daerah"
+  },
+  {
+   "kode": "1.03.03",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Dana Perimbangan yang telah ditetapkan belum masuk ke kas daerah"
+  },
+  {
+   "kode": "1.03.04",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Penerimaan negara/daerah diterima atau digunakan oleh instansi yang tidak berhak"
+  },
+  {
+   "kode": "1.03.05",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Pengenaan tarif pajak/PNBP lebih rendah dari ketentuan"
+  },
+  {
+   "kode": "1.03.06",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Koreksi perhitungan bagi hasil dengan KKKS"
+  },
+  {
+   "kode": "1.03.07",
+   "sub_kelompok": "1.03.00",
+   "kategori": "KPN",
+   "uraian": "Kelebihan pembayaran subsidi oleh pemerintah"
+  },
+  {
+   "kode": "1.04.01",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pertanggungjawaban tidak akuntabel (bukti tidak lengkap/tidak valid)"
+  },
+  {
+   "kode": "1.04.02",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pekerjaan dilaksanakan mendahului kontrak atau penetapan anggaran"
+  },
+  {
+   "kode": "1.04.03",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Proses pengadaan barang/jasa tidak sesuai ketentuan (tidak menimbulkan kerugian negara)"
+  },
+  {
+   "kode": "1.04.04",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pemecahan kontrak untuk menghindari pelelangan"
+  },
+  {
+   "kode": "1.04.05",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pelaksanaan lelang secara proforma"
+  },
+  {
+   "kode": "1.04.06",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Penyimpangan terhadap peraturan perundang-undangan bidang pengelolaan perlengkapan atau barang milik negara/daerah/perusahaan"
+  },
+  {
+   "kode": "1.04.07",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Penyimpangan terhadap peraturan perundang-undangan bidang tertentu lainnya (kehutanan, pertambangan, perpajakan, dll)"
+  },
+  {
+   "kode": "1.04.08",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Koreksi perhitungan subsidi/kewajiban pelayanan umum"
+  },
+  {
+   "kode": "1.04.09",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pembentukan cadangan piutang, perhitungan penyusutan atau amortisasi tidak sesuai ketentuan"
+  },
+  {
+   "kode": "1.04.10",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Penyetoran penerimaan negara/daerah atau kas di bendaharawan ke kas negara/daerah melebihi batas waktu yang ditentukan"
+  },
+  {
+   "kode": "1.04.11",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pertanggungjawaban/penyetoran uang persediaan melebihi batas waktu yang ditentukan"
+  },
+  {
+   "kode": "1.04.12",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Sisa kas di bendahara pengeluaran akhir tahun anggaran belum/tidak disetor ke kas negara/daerah"
+  },
+  {
+   "kode": "1.04.13",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pengeluaran investasi pemerintah tidak didukung bukti yang sah"
+  },
+  {
+   "kode": "1.04.14",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Kepemilikan aset tidak/belum didukung bukti yang sah"
+  },
+  {
+   "kode": "1.04.15",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pengalihan anggaran antar MAK tidak sah"
+  },
+  {
+   "kode": "1.04.16",
+   "sub_kelompok": "1.04.00",
+   "kategori": "ADM",
+   "uraian": "Pelampauan pagu anggaran"
+  },
+  {
+   "kode": "1.05.01",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana korupsi"
+  },
+  {
+   "kode": "1.05.02",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana perbankan"
+  },
+  {
+   "kode": "1.05.03",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana perpajakan"
+  },
+  {
+   "kode": "1.05.04",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana kepabeanan"
+  },
+  {
+   "kode": "1.05.05",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana kehutanan"
+  },
+  {
+   "kode": "1.05.06",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana pasar modal"
+  },
+  {
+   "kode": "1.05.07",
+   "sub_kelompok": "1.05.00",
+   "kategori": "PID",
+   "uraian": "Indikasi tindak pidana khusus lainnya"
+  },
+  {
+   "kode": "2.01.01",
+   "sub_kelompok": "2.01.00",
+   "kategori": "SPI",
+   "uraian": "Pencatatan tidak/belum dilakukan atau tidak akurat"
+  },
+  {
+   "kode": "2.01.02",
+   "sub_kelompok": "2.01.00",
+   "kategori": "SPI",
+   "uraian": "Proses penyusunan laporan tidak sesuai ketentuan"
+  },
+  {
+   "kode": "2.01.03",
+   "sub_kelompok": "2.01.00",
+   "kategori": "SPI",
+   "uraian": "Entitas terlambat menyampaikan laporan"
+  },
+  {
+   "kode": "2.01.04",
+   "sub_kelompok": "2.01.00",
+   "kategori": "SPI",
+   "uraian": "Sistem informasi akuntansi dan pelaporan tidak memadai"
+  },
+  {
+   "kode": "2.01.05",
+   "sub_kelompok": "2.01.00",
+   "kategori": "SPI",
+   "uraian": "Sistem informasi akuntansi dan pelaporan belum didukung SDM yang memadai"
+  },
+  {
+   "kode": "2.02.01",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Perencanaan kegiatan tidak memadai"
+  },
+  {
+   "kode": "2.02.02",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Mekanisme pemungutan, penyetoran dan pelaporan serta penggunaan penerimaan negara/daerah dan hibah tidak sesuai ketentuan"
+  },
+  {
+   "kode": "2.02.03",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Penyimpangan terhadap peraturan perundang-undangan bidang teknis tertentu atau ketentuan intern tentang pendapatan dan belanja"
+  },
+  {
+   "kode": "2.02.04",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Pelaksanaan belanja di luar mekanisme APBN/APBD"
+  },
+  {
+   "kode": "2.02.05",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Penetapan/pelaksanaan kebijakan tidak tepat atau belum dilakukan berakibat hilangnya potensi penerimaan/pendapatan"
+  },
+  {
+   "kode": "2.02.06",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Penetapan/pelaksanaan kebijakan tidak tepat atau belum dilakukan berakibat peningkatan biaya/belanja"
+  },
+  {
+   "kode": "2.02.07",
+   "sub_kelompok": "2.02.00",
+   "kategori": "SPI",
+   "uraian": "Kelemahan pengelolaan fisik aset"
+  },
+  {
+   "kode": "2.03.01",
+   "sub_kelompok": "2.03.00",
+   "kategori": "SPI",
+   "uraian": "Entitas tidak memiliki SOP yang formal untuk suatu prosedur atau keseluruhan prosedur"
+  },
+  {
+   "kode": "2.03.02",
+   "sub_kelompok": "2.03.00",
+   "kategori": "SPI",
+   "uraian": "SOP yang ada pada entitas tidak berjalan secara optimal atau tidak ditaati"
+  },
+  {
+   "kode": "2.03.03",
+   "sub_kelompok": "2.03.00",
+   "kategori": "SPI",
+   "uraian": "Entitas tidak memiliki satuan pengawas intern"
+  },
+  {
+   "kode": "2.03.04",
+   "sub_kelompok": "2.03.00",
+   "kategori": "SPI",
+   "uraian": "Satuan pengawas intern yang ada tidak memadai atau tidak berjalan optimal"
+  },
+  {
+   "kode": "2.03.05",
+   "sub_kelompok": "2.03.00",
+   "kategori": "SPI",
+   "uraian": "Tidak ada pemisahan tugas dan fungsi yang memadai"
+  },
+  {
+   "kode": "3.01.01",
+   "sub_kelompok": "3.01.00",
+   "kategori": "E3",
+   "uraian": "Pengadaan barang/jasa melebihi kebutuhan"
+  },
+  {
+   "kode": "3.01.02",
+   "sub_kelompok": "3.01.00",
+   "kategori": "E3",
+   "uraian": "Penetapan kualitas dan kuantitas barang/jasa yang digunakan tidak sesuai standar"
+  },
+  {
+   "kode": "3.01.03",
+   "sub_kelompok": "3.01.00",
+   "kategori": "E3",
+   "uraian": "Pemborosan keuangan negara/daerah/perusahaan atau kemahalan harga"
+  },
+  {
+   "kode": "3.02.01",
+   "sub_kelompok": "3.02.00",
+   "kategori": "E3",
+   "uraian": "Penggunaan kuantitas input untuk satu satuan output lebih besar/tinggi dari yang seharusnya"
+  },
+  {
+   "kode": "3.02.02",
+   "sub_kelompok": "3.02.00",
+   "kategori": "E3",
+   "uraian": "Penggunaan kualitas input untuk satu satuan output lebih tinggi dari seharusnya"
+  },
+  {
+   "kode": "3.03.01",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Penggunaan anggaran tidak tepat sasaran/tidak sesuai peruntukan"
+  },
+  {
+   "kode": "3.03.02",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Pemanfaatan barang/jasa dilakukan tidak sesuai dengan rencana yang ditetapkan"
+  },
+  {
+   "kode": "3.03.03",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Barang yang dibeli belum/tidak dapat dimanfaatkan"
+  },
+  {
+   "kode": "3.03.04",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Pemanfaatan barang/jasa tidak berdampak terhadap pencapaian tujuan organisasi"
+  },
+  {
+   "kode": "3.03.05",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Pelaksanaan kegiatan terlambat/terhambat sehingga mempengaruhi pencapaian tujuan organisasi"
+  },
+  {
+   "kode": "3.03.06",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Pelayanan kepada masyarakat tidak optimal"
+  },
+  {
+   "kode": "3.03.07",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Fungsi atau tugas instansi yang diperiksa tidak diselenggarakan dengan baik termasuk target penerimaan tidak tercapai"
+  },
+  {
+   "kode": "3.03.08",
+   "sub_kelompok": "3.03.00",
+   "kategori": "E3",
+   "uraian": "Penggunaan biaya promosi/pemasaran tidak efektif"
+  },
+  {
+   "kode": "4.01.01",
+   "sub_kelompok": "4.01.00",
+   "kategori": "RKK",
+   "uraian": "Dokumen perencanaan (RPJMD/Renstra/RKPD/Renja) tidak sinkron atau tidak sesuai ketentuan"
+  },
+  {
+   "kode": "4.01.02",
+   "sub_kelompok": "4.01.00",
+   "kategori": "RKK",
+   "uraian": "Penyusunan RKA/DPA tidak sesuai ketentuan atau tidak didukung analisis kebutuhan"
+  },
+  {
+   "kode": "4.01.03",
+   "sub_kelompok": "4.01.00",
+   "kategori": "RKK",
+   "uraian": "Indikator dan target kinerja tidak terukur atau tidak selaras dengan perencanaan"
+  },
+  {
+   "kode": "4.02.01",
+   "sub_kelompok": "4.02.00",
+   "kategori": "RKK",
+   "uraian": "Capaian kinerja tidak sesuai target yang ditetapkan"
+  },
+  {
+   "kode": "4.02.02",
+   "sub_kelompok": "4.02.00",
+   "kategori": "RKK",
+   "uraian": "Pelaporan kinerja tidak akuntabel atau tidak tepat waktu"
+  },
+  {
+   "kode": "4.02.03",
+   "sub_kelompok": "4.02.00",
+   "kategori": "RKK",
+   "uraian": "Pelaksanaan kegiatan tidak sesuai rencana atau terlambat"
+  },
+  {
+   "kode": "4.03.01",
+   "sub_kelompok": "4.03.00",
+   "kategori": "SPI",
+   "uraian": "SOP atau pedoman pelaksanaan kegiatan belum ada atau tidak diterapkan"
+  },
+  {
+   "kode": "4.03.02",
+   "sub_kelompok": "4.03.00",
+   "kategori": "SPI",
+   "uraian": "Kapasitas atau kompetensi SDM pelaksana belum memadai"
+  },
+  {
+   "kode": "4.03.03",
+   "sub_kelompok": "4.03.00",
+   "kategori": "LNN",
+   "uraian": "Koordinasi antar unit atau perangkat daerah tidak berjalan dengan baik"
+  },
+  {
+   "kode": "4.03.04",
+   "sub_kelompok": "4.03.00",
+   "kategori": "SPI",
+   "uraian": "Pengelolaan risiko atau pengawasan melekat belum berjalan"
+  },
+  {
+   "kode": "4.04.01",
+   "sub_kelompok": "4.04.00",
+   "kategori": "ADM",
+   "uraian": "Dokumen pendukung atau kelengkapan administrasi tidak lengkap"
+  },
+  {
+   "kode": "4.04.02",
+   "sub_kelompok": "4.04.00",
+   "kategori": "ADM",
+   "uraian": "Pencatatan dan pengarsipan dokumen tidak tertib"
+  },
+  {
+   "kode": "4.04.03",
+   "sub_kelompok": "4.04.00",
+   "kategori": "ADM",
+   "uraian": "Keterlambatan penyampaian laporan atau dokumen"
+  }
+ ]
+}

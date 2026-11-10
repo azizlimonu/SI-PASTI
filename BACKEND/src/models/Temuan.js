@@ -4,6 +4,8 @@ const sequelize = require('../config/database');
 const Temuan = sequelize.define('Temuan', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   dokumen_penugasan_id: { type: DataTypes.INTEGER, allowNull: false },
+  jenis_temuan_id: { type: DataTypes.INTEGER, allowNull: true },
+  kategori_temuan_id: { type: DataTypes.INTEGER, allowNull: true },
   judul_temuan: { type: DataTypes.STRING(255), allowNull: false },
   uraian_temuan: { type: DataTypes.TEXT, allowNull: false },
   created_by: { type: DataTypes.INTEGER, allowNull: true }

@@ -14,6 +14,10 @@ const BuktiTL = require('./BuktiTL');
 const TindakLanjutBukti = require('./TindakLanjutBukti');
 const Pihak = require('./Pihak');
 const SetoranTgr = require('./SetoranTgr');
+const KategoriTemuan = require('./KategoriTemuan');
+const KelompokTemuan = require('./KelompokTemuan');
+const SubKelompokTemuan = require('./SubKelompokTemuan');
+const JenisTemuan = require('./JenisTemuan');
 
 // ═══════════════════════════════════════════
 // RELASI
@@ -114,6 +118,31 @@ SetoranTgr.belongsTo(Rekomendasi, { foreignKey: 'rekomendasi_id', as: 'rekomenda
 User.hasMany(SetoranTgr, { foreignKey: 'created_by', as: 'setorans' });
 SetoranTgr.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
+// ═══════════════════════════════════════════
+// KODE TEMUAN & KATEGORI TEMUAN
+// onDelete RESTRICT: baris master tidak bisa terhapus kalau masih dipakai
+// (mencegah data ikut hilang saat mengedit langsung di database).
+// ═══════════════════════════════════════════
+
+// Kelompok → Sub-kelompok → Jenis temuan
+KelompokTemuan.hasMany(SubKelompokTemuan, { foreignKey: 'kelompok_id', as: 'subKelompoks', onDelete: 'RESTRICT' });
+SubKelompokTemuan.belongsTo(KelompokTemuan, { foreignKey: 'kelompok_id', as: 'kelompok' });
+
+SubKelompokTemuan.hasMany(JenisTemuan, { foreignKey: 'sub_kelompok_id', as: 'jenisTemuans', onDelete: 'RESTRICT' });
+JenisTemuan.belongsTo(SubKelompokTemuan, { foreignKey: 'sub_kelompok_id', as: 'subKelompok' });
+
+// Kategori → Jenis temuan (kategori ditentukan per jenis)
+KategoriTemuan.hasMany(JenisTemuan, { foreignKey: 'kategori_id', as: 'jenisTemuans', onDelete: 'RESTRICT' });
+JenisTemuan.belongsTo(KategoriTemuan, { foreignKey: 'kategori_id', as: 'kategori' });
+
+// Temuan → Jenis temuan (kosong untuk temuan manual) dan Kategori (diisi untuk temuan manual).
+// Kategori efektif sebuah temuan = kategori dari jenis temuannya, atau kategori manualnya.
+JenisTemuan.hasMany(Temuan, { foreignKey: 'jenis_temuan_id', as: 'temuans', onDelete: 'SET NULL' });
+Temuan.belongsTo(JenisTemuan, { foreignKey: 'jenis_temuan_id', as: 'jenisTemuan' });
+
+KategoriTemuan.hasMany(Temuan, { foreignKey: 'kategori_temuan_id', as: 'temuans', onDelete: 'RESTRICT' });
+Temuan.belongsTo(KategoriTemuan, { foreignKey: 'kategori_temuan_id', as: 'kategori' });
+
 module.exports = {
   sequelize,
   User,
@@ -129,5 +158,9 @@ module.exports = {
   BuktiTL,
   TindakLanjutBukti,
   Pihak,
-  SetoranTgr
+  SetoranTgr,
+  KategoriTemuan,
+  KelompokTemuan,
+  SubKelompokTemuan,
+  JenisTemuan
 };

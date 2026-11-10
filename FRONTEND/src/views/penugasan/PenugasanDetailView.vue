@@ -441,6 +441,7 @@
         <TabTemuan
           :penugasan-id="Number(route.params.id)"
           :dokumen-list="dokumenList"
+          :jenis-penugasan="data?.jenis_penugasan || ''"
         />
       </div>
 
