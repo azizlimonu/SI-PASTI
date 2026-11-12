@@ -65,6 +65,11 @@ const router = createRouter({
           component: () => import('@/views/monitoring/MonitoringView.vue')
         },
         {
+          path: 'analitik',
+          name: 'analitik',
+          component: () => import('@/views/analitik/AnalitikView.vue')
+        },
+        {
           path: 'sktjm',
           name: 'sktjm',
           component: () => import('@/views/monitoring/SktjmView.vue')

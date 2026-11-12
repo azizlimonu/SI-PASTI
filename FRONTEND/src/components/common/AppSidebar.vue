@@ -266,6 +266,28 @@
         </RouterLink>
 
         <RouterLink
+          to="/analitik"
+          class="sidebar-link"
+          :class="{ active: route.path === '/analitik' }"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="nav-icon"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M3 3a1 1 0 0 1 1 1v11h13a1 1 0 1 1 0 2H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm4.707 6.293a1 1 0 0 1 1.414 0L10 10.172l2.293-2.879a1 1 0 0 1 1.5-.083l2.5 2.5a1 1 0 0 1-1.414 1.414l-1.693-1.693-2.293 2.879a1 1 0 0 1-1.5.083L8.414 10.707l-1.707 1.707a1 1 0 0 1-1.414-1.414l2.414-2.414Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <Transition name="fade-text">
+            <span v-if="!isCollapsed">Analitik</span>
+          </Transition>
+        </RouterLink>
+
+        <RouterLink
           to="/sktjm"
           class="sidebar-link"
           :class="{ active: route.path === '/sktjm' }"
