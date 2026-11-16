@@ -220,7 +220,7 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const toast = useToast()
-const { downloadFile } = useFileDownload()
+const { downloadFile, openBukti } = useFileDownload()
 const tlStore = useTindakLanjutStore()
 const dokumen = useDokumenStore()
 

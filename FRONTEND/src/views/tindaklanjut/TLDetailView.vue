@@ -490,7 +490,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTindakLanjutStore } from '@/stores/tindaklanjut'
 import { useToast } from '@/composables/useToast'
-const { downloadFile, openBukti } = useFileDownload()
+import { useFileDownload } from '@/composables/useFileDownload'
 import { dokumenService } from '@/services/dokumenService'
 import AppModal from '@/components/common/AppModal.vue'
 import AppConfirm from '@/components/common/AppConfirm.vue'
@@ -502,7 +502,7 @@ const route = useRoute()
 const auth = useAuthStore()
 const tindaklanjut = useTindakLanjutStore()
 const toast = useToast()
-const { triggerDownload } = useFileDownload()
+const { downloadFile, openBukti } = useFileDownload()
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -514,7 +514,7 @@ const setoranMap = ref({}) // { [rekomendasi_id]: SetoranTgr[] }
 // mirip backend canEditTindakLanjut (admin, admin_tl, superadmin).
 const canEdit = computed(() => ['admin', 'admin_tl', 'superadmin'].includes(auth.user?.role))
 
-const temuanList = computed(() => penugasan.value?.dokumens?.[0]?.temuans || [])
+const temuanList = computed(() => (penugasan.value?.dokumens || []).flatMap(d => d.temuans || []))
 
 const loadData = async () => {
   loading.value = true

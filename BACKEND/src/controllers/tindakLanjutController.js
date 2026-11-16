@@ -6,7 +6,9 @@ const {
 const writeLog = require('../utils/writelog');
 const { Op } = require('sequelize');
 const { getKeirbanFilter } = require('../middleware/auth');
-
+const {
+  bolehAkses, keirbananDariRekomendasi, bolehAksesBukti, tolakAkses
+} = require('../utils/akses');
 // ═══════════════════════════════════════════
 // GET TL BY REKOMENDASI
 // ═══════════════════════════════════════════
@@ -691,10 +693,7 @@ const getPenugasanNeedTL = async (req, res) => {
   try {
     const user = req.user;
     const { tahun, keirbanan, search } = req.query;
-    const { getKeirbanFilter } = require('../middleware/auth');
-    const {
-      bolehAkses, keirbananDariRekomendasi, bolehAksesBukti, tolakAkses
-    } = require('../utils/akses');
+    const pkptWhere = { ...getKeirbanFilter(user, keirbanan) };
     if (tahun) pkptWhere.tahun = tahun;
 
     const penugasanWhere = {};
