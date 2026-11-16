@@ -5,6 +5,13 @@
         <h1 class="page-title">Analitik Monitoring</h1>
         <p class="page-subtitle">{{ subjudul }}</p>
       </div>
+      <button
+        class="btn-primary"
+        :disabled="eksporLoading"
+        @click="eksporExcel"
+      >
+        {{ eksporLoading ? 'Menyiapkan file...' : 'Ekspor Excel' }}
+      </button>
     </div>
 
     <div
@@ -60,14 +67,17 @@ import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/ui'
 import { KEIRBANAN } from '@/utils/constants'
+import { exportService } from '@/services/exportService'
+import { useFileDownload } from '@/composables/useFileDownload'
 import AnalitikRingkasan from '@/components/analitik/AnalitikRingkasan.vue'
 import AnalitikPenugasan from '@/components/analitik/AnalitikPenugasan.vue'
 import AnalitikTemuan from '@/components/analitik/AnalitikTemuan.vue'
-import AnalitikTgr from '@/components/analitik/AnalitikTgr.vue'
+import AnalitikTgr from '@/components/analitik/AnalitikTGR.vue'
 import AnalitikKinerja from '@/components/analitik/AnalitikKinerja.vue'
 
 const auth = useAuthStore()
 const ui = useUIStore()
+const { downloadFile } = useFileDownload()
 
 const tabs = [
   { key: 'ringkasan', label: 'Ringkasan' },
@@ -81,6 +91,7 @@ const aktif = ref('ringkasan')
 const periode = ref('aktif')
 const sumber = ref('')
 const keirbanan = ref('')
+const eksporLoading = ref(false)
 
 // Filter dikirim ke semua tab; admin/irban otomatis dibatasi backend ke keirbanannya sendiri
 const filter = computed(() => ({
@@ -96,6 +107,16 @@ const subjudul = computed(() => {
   const waktu = periode.value === 'aktif' ? `Tahun ${ui.tahunAktif}` : 'Semua tahun'
   return `${lingkup} — ${waktu}`
 })
+
+// Ekspor memakai filter yang sedang aktif di halaman ini
+const eksporExcel = async () => {
+  eksporLoading.value = true
+  try {
+    await downloadFile(exportService.excel(filter.value), 'SI-PASTI-Ekspor.xlsx')
+  } finally {
+    eksporLoading.value = false
+  }
+}
 </script>
 
 <style scoped>

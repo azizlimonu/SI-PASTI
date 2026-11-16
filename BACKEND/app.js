@@ -35,6 +35,7 @@ const pihakRoutes = require('./src/routes/pihakRoutes');
 const monitoringRoutes = require('./src/routes/monitoringRoutes');
 const pengaturanRoutes = require('./src/routes/pengaturanRoutes');
 const kodeTemuanRoutes = require('./src/routes/kodeTemuanRoutes');
+const exportRoutes = require('./src/routes/exportRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -48,6 +49,7 @@ app.use('/api/pihak', pihakRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/pengaturan', pengaturanRoutes);
 app.use('/api/kode-temuan', kodeTemuanRoutes);
+app.use('/api/export', exportRoutes);
 
 // Hanya logo yang publik (dipakai <img> di sidebar, tidak bisa kirim token).
 // File SPT/dokumen/bukti TL TIDAK bisa diakses langsung — wajib lewat
